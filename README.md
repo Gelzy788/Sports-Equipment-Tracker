@@ -8,7 +8,7 @@
 
 1. Клонируйте репозиторий.
 
-2. Установите зависимости: ```pip install -r requirements.txt.```
+2. Установите зависимости: ```pip install -r requirements.txt```
 
 3. Запустите базу данных (Flask).
 
