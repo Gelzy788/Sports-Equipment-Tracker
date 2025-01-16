@@ -6,7 +6,7 @@
 ***
 **Установка**
 
-1. **Клонируйте репозиторий** по этой сслыке <https://github.com/Gelzy788/Sports-Equipment-Tracker/archive/refs/heads/main.zip>.
+1. **Скачайте архив** по этой сслыке <https://github.com/Gelzy788/Sports-Equipment-Tracker/archive/refs/heads/main.zip>.
 
 2. **Установите зависимости**:
       * Откройте командную строку
