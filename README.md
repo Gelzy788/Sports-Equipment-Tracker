@@ -6,17 +6,37 @@
 ***
 **Установка**
 
-1. Клонируйте репозиторий по этой сслыке <https://github.com/Gelzy788/Sports-Equipment-Tracker/archive/refs/heads/main.zip>.
+1. **Клонируйте репозиторий** по этой сслыке <https://github.com/Gelzy788/Sports-Equipment-Tracker/archive/refs/heads/main.zip>.
 
-2. Установите зависимости:
+2. **Установите зависимости**:
       * Откройте командную строку
       * Выбирете папку репозитория ```cd C:\путь_до_репозитория\Sports-Equipment-Tracker-main```
-      * Введите команду чтобы установить зависимости ```pip install -r requirements.txt```
+      * Убедитесь, что у вас установлен Python 3.9+ и виртуальное окружение. Затем выполните команды:
+        
+             python -m venv venv
+             source venv/bin/activate # для Linux/Mac
+             venv\Scripts\activate    # для Windows
+          
+      * Установите зависимости из файла requirements.txt:  ```pip install -r requirements.txt```
 
-5. Запустите базу данных (SQLite).
+3. **Запустите** базу данных (SQLite).
 
-6. Настройте .env файл.
+   По умолчанию проект использует SQLite, который не требует дополнительной настройки. Для начала работы выполните миграции:
 
-7. Запустите сервер: ```python manage.py runserver```
+        python manage.py migrate
 
-8. Перейдите на <http://localhost:8000> для работы с приложением.
+4. **Настройте** .env файл.
+
+   Создайте файл ```.env``` в корневой папке проекта и добавьте следующие переменные:
+
+          DEBUG=True
+          SECRET_KEY=ваш_секретный_ключ
+          ALLOWED_HOSTS=localhost,127.0.0.1
+
+5. **Запустите** сервер:
+
+   Запустите локальный сервер разработки командой:
+
+         python manage.py runserver
+
+6. **Перейдите** на <http://localhost:8000> для работы с приложением.
