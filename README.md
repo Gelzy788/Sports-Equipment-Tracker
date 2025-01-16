@@ -6,7 +6,7 @@
 ***
 **Установка**
 
-1. Клонируйте репозиторий.
+1. Клонируйте репозиторий по этой сслыке <https://github.com/Gelzy788/Sports-Equipment-Tracker.git>.
 
 2. Установите зависимости: ```pip install -r requirements.txt```
 
