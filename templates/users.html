@@ -16,13 +16,12 @@
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-hover align-middle">
-                    <thead>
+                    <thead class="thead-dark">
                         <tr>
                             <th>Фото</th>
-                            <th>ID</th>
                             <th>Имя пользователя</th>
                             <th>Email</th>
-                            <th>Статус</th>
+                            <th>Администратор</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
@@ -40,24 +39,17 @@
                                     alt="Фото профиля по умолчанию">
                                 {% endif %}
                             </td>
-                            <td>{{ user.id }}</td>
                             <td>{{ user.username }}</td>
                             <td>{{ user.email }}</td>
                             <td>
-                                <span class="badge {% if user.admin %}bg-primary{% else %}bg-secondary{% endif %}"
-                                    id="status-{{ user.id }}">
-                                    {% if user.admin %}Администратор{% else %}Пользователь{% endif %}
+                                <span class="badge {% if user.admin %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {% if user.admin %}Да{% else %}Нет{% endif %}
                                 </span>
                             </td>
                             <td>
                                 {% if user.id != current_user.id %}
-                                <button class="btn btn-sm {% if user.admin %}btn-danger{% else %}btn-success{% endif %}"
-                                    onclick="toggleAdmin('{{ user.id }}')" id="btn-{{ user.id }}">
-                                    {% if user.admin %}
-                                    Отозвать права администратора
-                                    {% else %}
-                                    Назначить администратором
-                                    {% endif %}
+                                <button class="btn btn-sm btn-secondary" onclick="toggleAdmin('{{ user.id }}')">
+                                    Изменить права
                                 </button>
                                 {% else %}
                                 <span class="text-muted">Текущий пользователь</span>

@@ -45,3 +45,7 @@ class Purchases(db.Model, UserMixin):
     count = db.Column(db.Integer())
     supplier = db.Column(db.String())
     status = db.Column(db.Boolean, default=False)
+
+    @property
+    def total_price(self):
+        return self.price * self.count

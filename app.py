@@ -139,10 +139,19 @@ def add_item():
         count = request.form.get('count', type=int)
 
         if name and count is not None:
-            new_item = Storage(name=name, count=count)
-            db.session.add(new_item)
+            # Проверяем, существует ли предмет
+            existing_item = Storage.query.filter_by(name=name).first()
+            if existing_item:
+                # Если предмет существует, увеличиваем его количество
+                existing_item.count += count
+                flash(f'Количество предмета "{name}" увеличено на {count}')
+            else:
+                # Если предмет не существует, добавляем его как новый
+                new_item = Storage(name=name, count=count)
+                db.session.add(new_item)
+                flash(f'Предмет "{name}" успешно добавлен')
+
             db.session.commit()
-            flash('Предмет успешно добавлен')
             return redirect(url_for('storage'))
 
     return render_template('add_item.html')
@@ -217,6 +226,93 @@ def toggle_admin(user_id):
     except Exception as e:
         db.session.rollback()
         return jsonify({'error': 'Произошла ошибка при обновлении прав'}), 500
+
+
+# Страница планирования закупок
+@app.route("/purchases", methods=['GET', 'POST'])
+@login_required
+def purchases():
+    if not current_user.admin:
+        flash("Доступ запрещен")
+        return redirect(url_for('get_data'))
+
+    if request.method == 'POST':
+        name_eq = request.form.get('name_eq')
+        price = request.form.get('price', type=int)
+        count = request.form.get('count', type=int)
+        supplier = request.form.get('supplier')
+        status = request.form.get('status') == '1'
+
+        if name_eq and price is not None and count is not None and supplier:
+            new_purchase = Purchases(
+                name_eq=name_eq, price=price, count=count, supplier=supplier, status=status)
+            db.session.add(new_purchase)
+
+            # Если статус "выполнено", добавляем товар на склад
+            if status:
+                item = Storage.query.filter_by(name=name_eq).first()
+                if item:
+                    item.count += count
+                else:
+                    new_item = Storage(name=name_eq, count=count)
+                    db.session.add(new_item)
+
+            db.session.commit()
+            flash('План закупки успешно добавлен')
+            return redirect(url_for('purchases'))
+
+    purchase_plans = Purchases.query.all()
+    return render_template("purchases.html", purchases=purchase_plans)
+
+
+# Изменение статуса закупки
+@app.route("/purchases/toggle_status/<int:purchase_id>", methods=['POST'])
+@login_required
+def toggle_purchase_status(purchase_id):
+    if not current_user.admin:
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    purchase = Purchases.query.get_or_404(purchase_id)
+    item = Storage.query.filter_by(name=purchase.name_eq).first()
+
+    if purchase.status:  # Если статус "выполнено", пытаемся отменить
+        if item and item.count >= purchase.count:
+            item.count -= purchase.count
+            purchase.status = False
+            db.session.commit()
+            return jsonify({
+                'message': f"Статус закупки изменен на 'не выполнено'. Количество предметов '{purchase.name_eq}' уменьшено на складе.",
+                'status': purchase.status
+            })
+        else:
+            return jsonify({'error': f"Недостаточно предметов '{purchase.name_eq}' на складе для отмены выполнения закупки."}), 400
+    else:  # Если статус "не выполнено", пытаемся выполнить
+        if item:
+            item.count += purchase.count
+        else:
+            new_item = Storage(name=purchase.name_eq, count=purchase.count)
+            db.session.add(new_item)
+
+        purchase.status = True
+        db.session.commit()
+        return jsonify({
+            'message': f"Статус закупки изменен на 'выполнено'. Предметы '{purchase.name_eq}' добавлены на склад.",
+            'status': purchase.status
+        })
+
+
+# Удаление закупки
+@app.route("/purchases/delete/<int:purchase_id>", methods=['DELETE'])
+@login_required
+def delete_purchase(purchase_id):
+    if not current_user.admin:
+        return jsonify({'error': 'Доступ запрещен'}), 403
+
+    purchase = Purchases.query.get_or_404(purchase_id)
+    db.session.delete(purchase)
+    db.session.commit()
+
+    return jsonify({'message': 'Закупка удалена'}), 200
 
 
 if __name__ == '__main__':
