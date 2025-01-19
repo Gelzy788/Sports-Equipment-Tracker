@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Управление пользователями</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-info">{{ message }}</div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>Фото</th>
+                            <th>ID</th>
+                            <th>Имя пользователя</th>
+                            <th>Email</th>
+                            <th>Статус</th>
+                            <th>Действия</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>
+                                {% if user.profile_picture %}
+                                <img src="{{ url_for('static', filename='profile_images/' + user.profile_picture) }}"
+                                    class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;"
+                                    alt="Фото профиля">
+                                {% else %}
+                                <img src="{{ url_for('static', filename='profile_images/default.png') }}"
+                                    class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;"
+                                    alt="Фото профиля по умолчанию">
+                                {% endif %}
+                            </td>
+                            <td>{{ user.id }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>
+                                <span class="badge {% if user.admin %}bg-primary{% else %}bg-secondary{% endif %}"
+                                    id="status-{{ user.id }}">
+                                    {% if user.admin %}Администратор{% else %}Пользователь{% endif %}
+                                </span>
+                            </td>
+                            <td>
+                                {% if user.id != current_user.id %}
+                                <button class="btn btn-sm {% if user.admin %}btn-danger{% else %}btn-success{% endif %}"
+                                    onclick="toggleAdmin('{{ user.id }}')" id="btn-{{ user.id }}">
+                                    {% if user.admin %}
+                                    Отозвать права администратора
+                                    {% else %}
+                                    Назначить администратором
+                                    {% endif %}
+                                </button>
+                                {% else %}
+                                <span class="text-muted">Текущий пользователь</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleAdmin(userId) {
+        fetch(`/users/toggle_admin/${userId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert(data.message);
+                    window.location.reload();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Произошла ошибка при изменении прав администратора');
+            });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <div class="position-relative" style="cursor: pointer;"
+                        onclick="document.getElementById('fileInput').click();">
+                        {% if user.profile_picture %}
+                        <img src="{{ url_for('static', filename='profile_images/' + user.profile_picture) }}"
+                            class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;"
+                            alt="Фото профиля">
+                        {% else %}
+                        <img src="{{ url_for('static', filename='profile_images/default.jpg') }}"
+                            class="rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;"
+                            alt="Фото профиля по умолчанию">
+                        {% endif %}
+                        <div class="position-absolute bottom-0 end-0 bg-primary rounded-circle p-2"
+                            style="margin-right: 30%; margin-bottom: 10%;">
+                            <i class="fas fa-camera text-white"></i>
+                        </div>
+                    </div>
+
+                    <form id="uploadForm" action="{{ url_for('upload_image') }}" method="POST"
+                        enctype="multipart/form-data" style="display: none;">
+                        <input type="file" id="fileInput" name="file" accept="image/*" onchange="submitForm()">
+                    </form>
+
+                    <h3>{{ user.username }}</h3>
+                    <p class="text-muted">{{ user.email }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Информация о пользователе</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>Статус:</strong>
+                        {% if user.admin %}
+                        <span class="badge bg-primary">Администратор</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Пользователь</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function submitForm() {
+        document.getElementById('uploadForm').submit();
+    }
+</script>
+{% endblock %}

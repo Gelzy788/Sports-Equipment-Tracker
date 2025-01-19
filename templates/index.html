@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="jumbotron">
+        <h1 class="display-4">Добро пожаловать в систему учета спортивного инвентаря</h1>
+        <p class="lead">Здесь вы можете управлять спортивным инвентарем, отслеживать его состояние и доступность.</p>
+        <hr class="my-4">
+        {% if not current_user.is_authenticated %}
+        <p>Для начала работы необходимо войти в систему или зарегистрироваться.</p>
+        <div class="mt-3">
+            <a class="btn btn-primary btn-lg me-2" href="{{ url_for('login') }}" role="button">Войти</a>
+            <a class="btn btn-secondary btn-lg" href="{{ url_for('registration') }}" role="button">Регистрация</a>
+        </div>
+        {% else %}
+        <p>Перейдите к управлению инвентарем или просмотрите свой профиль.</p>
+        <div class="mt-3">
+            {% if current_user.is_authenticated and current_user.admin %}
+            <a class="btn btn-primary btn-lg me-2" href="{{ url_for('storage') }}" role="button">Склад</a>
+            {% endif %}
+            <a class="btn btn-secondary btn-lg" href="{{ url_for('profile') }}" role="button">Профиль</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
