@@ -32,9 +32,13 @@ class Storage(db.Model):
 class Requests(db.Model):
     __tablename__ = 'requests'
     id = db.Column(db.Integer(), primary_key=True, nullable=False)
-    user_id = db.Column(db.BigInteger(), db.ForeignKey('users.id'))
-    friend_id = db.Column(db.BigInteger(), db.ForeignKey('users.id'))
+    user_id = db.Column(db.Integer(), db.ForeignKey('users.id'))
+    equipment_id = db.Column(db.Integer(), db.ForeignKey('storage.id'))
+    count = db.Column(db.Integer(), default=1)
+    description = db.Column(db.Text)
+    request_type = db.Column(db.String(20))  # 'получение' или 'ремонт'
     status = db.Column(db.Boolean, default=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class Purchases(db.Model, UserMixin):
