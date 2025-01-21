@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, flash, redirect, url_for
+from flask import Blueprint, render_template, request, flash, redirect, url_for, jsonify
 from flask_login import login_required, current_user
 from models import db, Storage, Equipment, Requests
 from datetime import datetime
@@ -9,7 +9,22 @@ user_bp = Blueprint('user', __name__)
 @user_bp.route('/available_equipment')
 @login_required
 def available_equipment():
+    # Получаем все оборудование
     equipment = Storage.query.all()
+    
+    # Получаем активные заявки пользователя
+    user_requests = Requests.query.filter_by(
+        user_id=current_user.id,
+        status=None  # None означает, что заявка еще не обработана
+    ).all()
+    
+    # Создаем множество ID оборудования, на которое есть активные заявки
+    active_requests = {req.equipment_id for req in user_requests}
+    
+    # Добавляем информацию о наличии активных заявок к каждому элементу оборудования
+    for item in equipment:
+        item.has_active_request = item.id in active_requests
+    
     return render_template('available_equipment.html', equipment=equipment)
 
 # Создание заявки на получение инвентаря
@@ -65,42 +80,64 @@ def request_equipment(equipment_id):
     return redirect(url_for('user.available_equipment'))
 
 # Создание заявки на ремонт/замену
-@user_bp.route('/repair_request/<int:equipment_id>', methods=['GET', 'POST'])
+@user_bp.route('/create_repair_request/<int:equipment_id>', methods=['POST'])
 @login_required
-def repair_request(equipment_id):
+def create_repair_request(equipment_id):
     equipment = Equipment.query.filter_by(
-        equipment_id=equipment_id,
-        user_id=current_user.id
+        user_id=current_user.id,
+        equipment_id=equipment_id
     ).first_or_404()
-    
-    if request.method == 'POST':
-        description = request.form.get('description', '')
-        if not description:
-            flash('Необходимо указать описание проблемы', 'error')
-            return redirect(url_for('user.my_equipment'))
-            
-        new_request = Requests(
-            user_id=current_user.id,
-            equipment_id=equipment_id,
-            description=description,
-            status=None,
-            request_type='ремонт'
-        )
-        
-        db.session.add(new_request)
+
+    description = request.form.get('description')
+    count = int(request.form.get('count', 1))
+
+    if not description:
+        flash('Необходимо указать описание проблемы', 'danger')
+        return redirect(url_for('user.repair_request', equipment_id=equipment_id))
+
+    if count < 1 or count > equipment.count:
+        flash('Неверное количество оборудования', 'danger')
+        return redirect(url_for('user.repair_request', equipment_id=equipment_id))
+
+    # Создаем заявку на ремонт
+    repair_request = Requests(
+        user_id=current_user.id,
+        equipment_id=equipment_id,
+        count=count,
+        description=description,
+        request_type='ремонт',
+        status=None,
+        created_at=datetime.utcnow(),
+        status_viewed=True
+    )
+
+    try:
+        db.session.add(repair_request)
         db.session.commit()
-        
         flash('Заявка на ремонт создана', 'success')
-        return redirect(url_for('user.my_requests'))
-        
-    return render_template('repair_request.html', equipment=equipment)
+    except:
+        db.session.rollback()
+        flash('Произошла ошибка при создании заявки', 'danger')
+
+    return redirect(url_for('user.my_requests'))
 
 # Просмотр своих заявок
 @user_bp.route('/my_requests')
 @login_required
 def my_requests():
-    requests = Requests.query.filter_by(user_id=current_user.id).all()
-    return render_template('my_requests.html', requests=requests)
+    # Получаем все заявки пользователя
+    requests = Requests.query.filter_by(user_id=current_user.id).order_by(Requests.created_at.desc()).all()
+    
+    # Проверяем наличие непросмотренных уведомлений
+    has_unviewed_requests = any(not r.status_viewed for r in requests)
+    has_unviewed_approved = any(not r.status_viewed and r.status == 1 for r in requests)
+    has_unviewed_rejected = any(not r.status_viewed and r.status == 0 for r in requests)
+    
+    return render_template('my_requests.html', 
+                         requests=requests,
+                         has_unviewed_requests=has_unviewed_requests,
+                         has_unviewed_approved=has_unviewed_approved,
+                         has_unviewed_rejected=has_unviewed_rejected)
 
 # Просмотр своего инвентаря
 @user_bp.route('/my_equipment')
@@ -171,3 +208,84 @@ def cancel_request(request_id):
     
     flash('Заявка успешно отменена', 'success')
     return redirect(url_for('user.my_requests'))
+
+# Создание кастомной заявки
+@user_bp.route('/create_custom_request', methods=['POST'])
+@login_required
+def create_custom_request():
+    equipment_name = request.form.get('equipment_name')
+    custom_description = request.form.get('custom_description')
+    request_type = request.form.get('request_type')
+    
+    if not equipment_name or not custom_description:
+        flash('Пожалуйста, заполните все поля', 'error')
+        return redirect(url_for('user.available_equipment'))
+    
+    try:
+        # Создаем новую заявку
+        new_request = Requests(
+            user_id=current_user.id,
+            equipment_name=equipment_name,  
+            custom_description=custom_description,
+            request_type=request_type,
+            status=None,
+            created_at=datetime.utcnow()
+        )
+        
+        db.session.add(new_request)
+        db.session.commit()
+        flash('Кастомная заявка успешно создана', 'success')
+    except Exception as e:
+        db.session.rollback()
+        print(f"Ошибка при создании заявки: {str(e)}")  
+        flash(f'Произошла ошибка при создании заявки: {str(e)}', 'error')
+    
+    return redirect(url_for('user.my_requests'))
+
+# API для поиска оборудования
+@user_bp.route('/api/equipment/search')
+@login_required
+def search_equipment():
+    term = request.args.get('term', '')
+    if len(term) < 2:
+        return jsonify([])
+    
+    # Поиск оборудования по названию
+    equipment = Storage.query.filter(Storage.name.ilike(f'%{term}%')).all()
+    return jsonify([{
+        'id': item.id,
+        'name': item.name,
+        'description': item.description
+    } for item in equipment])
+
+# Отмечаем уведомления как просмотренные
+@user_bp.route('/mark_notifications_viewed', methods=['POST'])
+@login_required
+def mark_notifications_viewed():
+    # Получаем все непросмотренные заявки пользователя
+    unviewed_requests = Requests.query.filter_by(
+        user_id=current_user.id,
+        status_viewed=False
+    ).all()
+    
+    # Отмечаем их как просмотренные
+    for request in unviewed_requests:
+        request.status_viewed = True
+    
+    try:
+        db.session.commit()
+        return jsonify({'success': True})
+    except:
+        db.session.rollback()
+        return jsonify({'success': False}), 500
+
+# Просмотр формы заявки на ремонт
+@user_bp.route('/repair_request/<int:equipment_id>', methods=['GET'])
+@login_required
+def repair_request(equipment_id):
+    equipment = Equipment.query.filter_by(
+        equipment_id=equipment_id,
+        user_id=current_user.id
+    ).first_or_404()
+    
+    return render_template('repair_request.html', equipment=equipment)

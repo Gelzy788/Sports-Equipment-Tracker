@@ -2,7 +2,21 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Мои заявки</h2>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Мои заявки</h2>
+    </div>
+
+    <!-- Поисковая строка -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="Поиск по названию оборудования...">
+                <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
 
     {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -17,23 +31,38 @@
 
     <ul class="nav nav-tabs mb-4" id="requestTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
-                Все заявки
+            <button class="nav-link active position-relative" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                Все
+                {% if has_unviewed_requests %}
+                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                    <span class="visually-hidden">Новые уведомления</span>
+                </span>
+                {% endif %}
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
-                На рассмотрении
+            <button class="nav-link position-relative" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                В обработке
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved" type="button" role="tab">
+            <button class="nav-link position-relative" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved" type="button" role="tab">
                 Одобренные
+                {% if has_unviewed_approved %}
+                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-success border border-light rounded-circle">
+                    <span class="visually-hidden">Новые одобренные</span>
+                </span>
+                {% endif %}
             </button>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button" role="tab">
+            <button class="nav-link position-relative" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button" role="tab">
                 Отклоненные
+                {% if has_unviewed_rejected %}
+                <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                    <span class="visually-hidden">Новые отклоненные</span>
+                </span>
+                {% endif %}
             </button>
         </li>
     </ul>
@@ -45,74 +74,88 @@
             <div class="row">
                 {% for request in requests %}
                 <div class="col-md-6 mb-4">
-                    <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">{{ request.storage.name }}</h5>
-                            <span class="badge {% if request.status == None %}bg-warning{% elif request.status == 1 %}bg-success{% elif request.status == 0 %}bg-danger{% endif %}">
-                                {% if request.status == None %}На рассмотрении{% elif request.status == 1 %}Одобрено{% elif request.status == 0 %}Отклонено{% endif %}
-                            </span>
+                    <div class="card h-100 {% if not request.status_viewed %}border-warning{% endif %}">
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                {% if request.equipment_id %}
+                                    {{ request.storage.name }}
+                                {% else %}
+                                    {{ request.equipment_name }}
+                                {% endif %}
+                            </h5>
                         </div>
                         <div class="card-body">
                             <p class="card-text">
-                                <strong>Тип заявки:</strong> {{ request.request_type }}
+                                <strong>Тип запроса:</strong> {{ request.request_type }}
                             </p>
+                            {% if request.custom_description %}
+                            <p class="card-text">
+                                <strong>Описание:</strong> {{ request.custom_description }}
+                            </p>
+                            {% endif %}
                             <p class="card-text">
                                 <strong>Количество:</strong> {{ request.count }}
                             </p>
                             <p class="card-text">
-                                <strong>Дата создания:</strong> {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                <strong>Статус:</strong>
+                                {% if request.status is none %}
+                                    <span class="badge bg-info">В обработке</span>
+                                {% elif request.status == 1 %}
+                                    <span class="badge bg-success">Одобрено</span>
+                                {% elif request.status == 0 %}
+                                    <span class="badge bg-danger">Отклонено</span>
+                                {% endif %}
                             </p>
-                            {% if request.description %}
                             <p class="card-text">
-                                <strong>Описание:</strong><br>
-                                {{ request.description }}
+                                <small class="text-muted">Создано: {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
                             </p>
-                            {% endif %}
                         </div>
-                        {% if request.status == None %}
-                        <div class="card-footer">
-                            <form action="{{ url_for('user.cancel_request', request_id=request.id) }}" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-danger btn-sm">Отменить заявку</button>
-                            </form>
-                        </div>
-                        {% endif %}
                     </div>
                 </div>
                 {% endfor %}
             </div>
         </div>
 
-        <!-- На рассмотрении -->
+        <!-- В обработке -->
         <div class="tab-pane fade" id="pending" role="tabpanel">
             <div class="row">
-                {% for request in requests if request.status == None %}
+                {% for request in requests if request.status is none %}
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">{{ request.storage.name }}</h5>
-                            <span class="badge bg-warning">На рассмотрении</span>
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                {% if request.equipment_id %}
+                                    {{ request.storage.name }}
+                                {% else %}
+                                    {{ request.equipment_name }}
+                                {% endif %}
+                            </h5>
                         </div>
                         <div class="card-body">
                             <p class="card-text">
-                                <strong>Тип заявки:</strong> {{ request.request_type }}
+                                <strong>Тип запроса:</strong> {{ request.request_type }}
                             </p>
+                            {% if request.custom_description %}
+                            <p class="card-text">
+                                <strong>Описание:</strong> {{ request.custom_description }}
+                            </p>
+                            {% endif %}
                             <p class="card-text">
                                 <strong>Количество:</strong> {{ request.count }}
                             </p>
                             <p class="card-text">
-                                <strong>Дата создания:</strong> {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                <strong>Статус:</strong>
+                                {% if request.status is none %}
+                                    <span class="badge bg-info">В обработке</span>
+                                {% elif request.status == 1 %}
+                                    <span class="badge bg-success">Одобрено</span>
+                                {% elif request.status == 0 %}
+                                    <span class="badge bg-danger">Отклонено</span>
+                                {% endif %}
                             </p>
-                            {% if request.description %}
                             <p class="card-text">
-                                <strong>Описание:</strong><br>
-                                {{ request.description }}
+                                <small class="text-muted">Создано: {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
                             </p>
-                            {% endif %}
-                        </div>
-                        <div class="card-footer">
-                            <form action="{{ url_for('user.cancel_request', request_id=request.id) }}" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-danger btn-sm">Отменить заявку</button>
-                            </form>
                         </div>
                     </div>
                 </div>
@@ -126,26 +169,40 @@
                 {% for request in requests if request.status == 1 %}
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">{{ request.storage.name }}</h5>
-                            <span class="badge bg-success">Одобрено</span>
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                {% if request.equipment_id %}
+                                    {{ request.storage.name }}
+                                {% else %}
+                                    {{ request.equipment_name }}
+                                {% endif %}
+                            </h5>
                         </div>
                         <div class="card-body">
                             <p class="card-text">
-                                <strong>Тип заявки:</strong> {{ request.request_type }}
+                                <strong>Тип запроса:</strong> {{ request.request_type }}
                             </p>
+                            {% if request.custom_description %}
+                            <p class="card-text">
+                                <strong>Описание:</strong> {{ request.custom_description }}
+                            </p>
+                            {% endif %}
                             <p class="card-text">
                                 <strong>Количество:</strong> {{ request.count }}
                             </p>
                             <p class="card-text">
-                                <strong>Дата создания:</strong> {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                <strong>Статус:</strong>
+                                {% if request.status is none %}
+                                    <span class="badge bg-info">В обработке</span>
+                                {% elif request.status == 1 %}
+                                    <span class="badge bg-success">Одобрено</span>
+                                {% elif request.status == 0 %}
+                                    <span class="badge bg-danger">Отклонено</span>
+                                {% endif %}
                             </p>
-                            {% if request.description %}
                             <p class="card-text">
-                                <strong>Описание:</strong><br>
-                                {{ request.description }}
+                                <small class="text-muted">Создано: {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
                             </p>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -159,26 +216,40 @@
                 {% for request in requests if request.status == 0 %}
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">{{ request.storage.name }}</h5>
-                            <span class="badge bg-danger">Отклонено</span>
+                        <div class="card-header">
+                            <h5 class="mb-0">
+                                {% if request.equipment_id %}
+                                    {{ request.storage.name }}
+                                {% else %}
+                                    {{ request.equipment_name }}
+                                {% endif %}
+                            </h5>
                         </div>
                         <div class="card-body">
                             <p class="card-text">
-                                <strong>Тип заявки:</strong> {{ request.request_type }}
+                                <strong>Тип запроса:</strong> {{ request.request_type }}
                             </p>
+                            {% if request.custom_description %}
+                            <p class="card-text">
+                                <strong>Описание:</strong> {{ request.custom_description }}
+                            </p>
+                            {% endif %}
                             <p class="card-text">
                                 <strong>Количество:</strong> {{ request.count }}
                             </p>
                             <p class="card-text">
-                                <strong>Дата создания:</strong> {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                                <strong>Статус:</strong>
+                                {% if request.status is none %}
+                                    <span class="badge bg-info">В обработке</span>
+                                {% elif request.status == 1 %}
+                                    <span class="badge bg-success">Одобрено</span>
+                                {% elif request.status == 0 %}
+                                    <span class="badge bg-danger">Отклонено</span>
+                                {% endif %}
                             </p>
-                            {% if request.description %}
                             <p class="card-text">
-                                <strong>Описание:</strong><br>
-                                {{ request.description }}
+                                <small class="text-muted">Создано: {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
                             </p>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
@@ -204,6 +275,49 @@ document.addEventListener('DOMContentLoaded', function() {
             tabTrigger.show()
         })
     })
-})
+
+    // Поиск по заявкам
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const cards = document.querySelectorAll('.card');
+
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase();
+        cards.forEach(card => {
+            const equipmentName = card.querySelector('.card-header h5').textContent.toLowerCase();
+            if (equipmentName.includes(searchTerm)) {
+                card.style.display = '';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    searchInput.addEventListener('input', performSearch);
+    searchButton.addEventListener('click', performSearch);
+
+    // Отмечаем уведомления как просмотренные при открытии вкладки
+    const tabButtons = document.querySelectorAll('[data-bs-toggle="tab"]');
+    tabButtons.forEach(button => {
+        button.addEventListener('shown.bs.tab', function() {
+            fetch('/user/mark_notifications_viewed', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            }).then(response => {
+                if (response.ok) {
+                    // Убираем индикаторы уведомлений
+                    document.querySelectorAll('.border-warning').forEach(card => {
+                        card.classList.remove('border-warning');
+                    });
+                    document.querySelectorAll('.position-absolute').forEach(badge => {
+                        badge.style.display = 'none';
+                    });
+                }
+            });
+        });
+    });
+});
 </script>
 {% endblock %}

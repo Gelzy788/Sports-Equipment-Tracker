@@ -7,6 +7,7 @@ from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
 from user_app import user_bp
 import os
+from datetime import datetime
 
 # Проверяем наличие файла базы данных
 if not os.path.exists('database.db'):
@@ -24,14 +25,15 @@ app.register_blueprint(user_bp, url_prefix='/user')
 # Добавляем глобальную переменную для уведомлений
 @app.context_processor
 def inject_notifications():
-    notifications_count = 0
     if current_user.is_authenticated:
-        # Считаем количество необработанных заявок для пользователя
-        notifications_count = Requests.query.filter_by(
-            user_id=current_user.id,
-            status=False
+        unviewed_count = Requests.query.filter(
+            Requests.user_id == current_user.id,
+            Requests.status_viewed == False,
+            Requests.status.in_([0, 1])  # Проверяем только обработанные заявки
         ).count()
-    return dict(notifications_count=notifications_count)
+        
+        return {'notification_count': unviewed_count}
+    return {'notification_count': 0}
 
 
 @login_manager.user_loader
@@ -391,8 +393,8 @@ def delete_purchase(purchase_id):
 @app.route('/my_inventory')
 @login_required
 def my_inventory():
-    user_equipment = Equipment.query.filter_by(user_id=current_user.id).all()
-    return render_template('my_inventory.html', equipment=user_equipment)
+    equipment = Equipment.query.filter_by(user_id=current_user.id).all()
+    return render_template('my_inventory.html', equipment=equipment)
 
 
 @app.route("/user_inventory/<int:user_id>")
@@ -439,32 +441,85 @@ def process_request(request_id, action):
         return redirect(url_for('view_requests'))
     
     request = Requests.query.get_or_404(request_id)
-    storage_item = Storage.query.get(request.equipment_id)
-    
-    if not storage_item:
-        flash('Оборудование не найдено', 'danger')
-        return redirect(url_for('view_requests'))
     
     try:
         if action == 'approve':
-            # Проверяем все активные заявки на это оборудование
-            active_requests = Requests.query.filter_by(
-                equipment_id=request.equipment_id,
-                status=None
-            ).order_by(Requests.created_at).all()
-            
-            # Считаем общее количество запрошенного оборудования в активных заявках
-            total_requested = sum(r.count for r in active_requests if r.id <= request.id)
-            
-            if storage_item.count >= total_requested:
-                request.status = True
-                storage_item.count -= request.count
-                flash('Заявка одобрена', 'success')
-            else:
-                flash('Недостаточно оборудования на складе с учетом всех активных заявок', 'danger')
-                return redirect(url_for('view_requests'))
+            if request.equipment_id:  # Для обычных заявок
+                storage_item = Storage.query.get(request.equipment_id)
+                if not storage_item:
+                    flash('Оборудование не найдено', 'danger')
+                    return redirect(url_for('view_requests'))
+                
+                # Проверяем все активные заявки на это оборудование
+                active_requests = Requests.query.filter_by(
+                    equipment_id=request.equipment_id,
+                    status=None
+                ).order_by(Requests.created_at).all()
+                
+                # Считаем общее количество запрошенного оборудования в активных заявках
+                total_requested = sum(r.count for r in active_requests if r.id <= request.id)
+                
+                if storage_item.count >= total_requested:
+                    request.status = True
+                    request.status_viewed = False
+                    request.status_changed_at = datetime.utcnow()
+                    storage_item.count -= request.count
+                    
+                    # Проверяем, есть ли уже такое оборудование у пользователя
+                    user_equipment = Equipment.query.filter_by(
+                        user_id=request.user_id,
+                        equipment_id=request.equipment_id
+                    ).first()
+                    
+                    if user_equipment:
+                        # Если есть - увеличиваем количество
+                        user_equipment.count += request.count
+                    else:
+                        # Если нет - создаем новую запись
+                        new_equipment = Equipment(
+                            user_id=request.user_id,
+                            equipment_id=request.equipment_id,
+                            count=request.count
+                        )
+                        db.session.add(new_equipment)
+                    
+                    flash('Заявка одобрена', 'success')
+                else:
+                    flash('Недостаточно оборудования на складе с учетом всех активных заявок', 'danger')
+                    return redirect(url_for('view_requests'))
+            else:  # Для кастомных заявок
+                try:
+                    # Создаем новое оборудование на складе
+                    new_storage_item = Storage(
+                        name=request.equipment_name,
+                        count=1  # Начальное количество
+                    )
+                    db.session.add(new_storage_item)
+                    db.session.flush()  # Чтобы получить id нового storage item
+                    
+                    # Обновляем заявку с id нового оборудования
+                    request.equipment_id = new_storage_item.id
+                    request.status = True
+                    request.status_viewed = False
+                    request.status_changed_at = datetime.utcnow()
+                    
+                    # Создаем запись о выдаче оборудования пользователю
+                    new_equipment = Equipment(
+                        user_id=request.user_id,
+                        equipment_id=new_storage_item.id,
+                        count=request.count or 1
+                    )
+                    db.session.add(new_equipment)
+                    flash('Кастомная заявка одобрена', 'success')
+                except Exception as e:
+                    print(f"Ошибка при создании оборудования: {str(e)}")
+                    flash('Ошибка при создании оборудования', 'danger')
+                    return redirect(url_for('view_requests'))
+                
         elif action == 'reject':
             request.status = False
+            request.status_viewed = False
+            request.status_changed_at = datetime.utcnow()
             flash('Заявка отклонена', 'danger')
         
         db.session.commit()
@@ -474,6 +529,45 @@ def process_request(request_id, action):
         db.session.rollback()
         flash(f'Произошла ошибка при обработке заявки: {str(e)}', 'danger')
         return redirect(url_for('view_requests'))
+
+@app.route('/api/equipment/search')
+@login_required
+def search_equipment():
+    term = request.args.get('term', '')
+    if len(term) < 2:
+        return jsonify([])
+    
+    # Поиск оборудования по названию
+    equipment = Storage.query.filter(Storage.name.ilike(f'%{term}%')).all()
+    return jsonify([{
+        'id': item.id,
+        'name': item.name,
+        'description': item.description
+    } for item in equipment])
+
+@app.route('/create_custom_request', methods=['POST'])
+@login_required
+def create_custom_request():
+    equipment_name = request.form.get('equipment_name')
+    custom_description = request.form.get('custom_description')
+    request_type = request.form.get('request_type')
+    
+    # Поиск оборудования по названию
+    equipment = Storage.query.filter(Storage.name == equipment_name).first()
+    
+    # Создаем новый запрос
+    new_request = Requests(
+        user_id=current_user.id,
+        storage_id=equipment.id if equipment else None,
+        request_type=request_type,
+        custom_description=custom_description
+    )
+    
+    db.session.add(new_request)
+    db.session.commit()
+    
+    flash('Ваш запрос успешно создан и отправлен на рассмотрение', 'success')
+    return redirect(url_for('view_requests'))
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

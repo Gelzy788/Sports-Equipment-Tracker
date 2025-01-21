@@ -2,26 +2,82 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Доступное оборудование</h2>
-    <div class="row">
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h2>Доступное оборудование</h2>
+        </div>
+        <div class="col-md-6 d-flex justify-content-end">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#customRequestModal">
+                <i class="fas fa-plus"></i> Создать кастомный запрос
+            </button>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <!-- Поисковая строка -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="input-group">
+                <input type="text" id="searchInput" class="form-control" placeholder="Поиск оборудования...">
+                <button class="btn btn-outline-secondary" type="button" id="searchButton">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Фильтры -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-filter="all">Все</button>
+                <button type="button" class="btn btn-outline-primary" data-filter="available">В наличии</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" id="equipmentGrid">
         {% for item in equipment %}
-        <div class="col-md-4 mb-4">
-            <div class="card equipment-card">
+        <div class="col-md-4 mb-4 equipment-item" 
+             data-name="{{ item.name|lower }}" 
+             data-available="{{ item.count > 0 }}">
+            <div class="card h-100">
                 <div class="card-body">
                     <h5 class="card-title">{{ item.name }}</h5>
                     <p class="card-text">{{ item.description }}</p>
                     <p class="card-text">
                         <small class="text-muted">Доступно: {{ item.count }}</small>
                     </p>
-                    <form action="{{ url_for('user.request_equipment', equipment_id=item.id) }}" method="post" class="request-form">
-                        <div class="mb-3 quantity-input" style="display: none;">
-                            <label for="quantity-{{ item.id }}" class="form-label">Количество:</label>
-                            <input type="number" class="form-control" id="quantity-{{ item.id }}" 
-                                   name="quantity" min="1" max="{{ item.count }}" required>
+                    {% if item.count > 0 %}
+                        {% if item.has_active_request %}
+                            <div class="alert alert-warning" role="alert">
+                                У вас уже есть активная заявка на это оборудование
+                            </div>
+                        {% else %}
+                            <form method="post" action="{{ url_for('user.request_equipment', equipment_id=item.id) }}" class="request-form">
+                                <div class="input-group mb-3">
+                                    <button type="button" class="btn btn-outline-secondary minus-btn">-</button>
+                                    <input type="number" name="quantity" class="form-control text-center quantity-input" value="1" min="1" max="{{ item.count }}">
+                                    <button type="button" class="btn btn-outline-secondary plus-btn">+</button>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100">Запросить</button>
+                            </form>
+                        {% endif %}
+                    {% else %}
+                        <div class="alert alert-secondary" role="alert">
+                            Нет в наличии
                         </div>
-                        <button type="button" class="btn btn-primary request-btn">Запросить</button>
-                        <button type="submit" class="btn btn-success submit-btn" style="display: none;">Подтвердить</button>
-                    </form>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -29,34 +85,136 @@
     </div>
 </div>
 
+<!-- Модальное окно для кастомного запроса -->
+<div class="modal fade" id="customRequestModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Создать кастомный запрос</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="customRequestForm" method="post" action="{{ url_for('user.create_custom_request') }}">
+                    <div class="mb-3">
+                        <label for="equipmentName" class="form-label">Название оборудования</label>
+                        <input type="text" class="form-control" id="equipmentName" name="equipment_name" required>
+                        <div id="equipmentSuggestions" class="list-group mt-2"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="customDescription" class="form-label">Описание запроса</label>
+                        <textarea class="form-control" id="customDescription" name="custom_description" rows="3" required 
+                                placeholder="Опишите, что вам нужно. Например: нужен футбольный мяч для тренировки на следующей неделе"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="requestType" class="form-label">Тип запроса</label>
+                        <select class="form-control" id="requestType" name="request_type" required>
+                            <option value="получение">Получение оборудования</option>
+                            <option value="ремонт">Ремонт</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" form="customRequestForm" class="btn btn-primary">Отправить запрос</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const forms = document.querySelectorAll('.request-form');
-    
-    forms.forEach(form => {
-        const requestBtn = form.querySelector('.request-btn');
-        const submitBtn = form.querySelector('.submit-btn');
-        const quantityInput = form.querySelector('.quantity-input');
-        
-        requestBtn.addEventListener('click', function() {
-            requestBtn.style.display = 'none';
-            submitBtn.style.display = 'inline-block';
-            quantityInput.style.display = 'block';
+    // Поиск по оборудованию
+    const searchInput = document.getElementById('searchInput');
+    const searchButton = document.getElementById('searchButton');
+    const equipmentItems = document.querySelectorAll('.equipment-item');
+
+    function performSearch() {
+        const searchTerm = searchInput.value.toLowerCase();
+        equipmentItems.forEach(item => {
+            const name = item.dataset.name;
+            if (name.includes(searchTerm)) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
         });
-        
-        // Проверка введенного количества
-        const input = form.querySelector('input[type="number"]');
-        input.addEventListener('input', function() {
-            const max = parseInt(this.getAttribute('max'));
-            const value = parseInt(this.value);
+    }
+
+    searchInput.addEventListener('input', performSearch);
+    searchButton.addEventListener('click', performSearch);
+
+    // Фильтры
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filter = this.dataset.filter;
             
-            if (value > max) {
-                this.value = max;
-            }
-            if (value < 1) {
-                this.value = 1;
+            // Обновляем активную кнопку
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            // Применяем фильтр
+            equipmentItems.forEach(item => {
+                if (filter === 'all' || 
+                    (filter === 'available' && item.dataset.available === 'True')) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Обработка кнопок +/- для количества
+    document.querySelectorAll('.request-form').forEach(form => {
+        const minusBtn = form.querySelector('.minus-btn');
+        const plusBtn = form.querySelector('.plus-btn');
+        const input = form.querySelector('.quantity-input');
+        
+        minusBtn.addEventListener('click', () => {
+            const currentValue = parseInt(input.value);
+            if (currentValue > parseInt(input.min)) {
+                input.value = currentValue - 1;
             }
         });
+        
+        plusBtn.addEventListener('click', () => {
+            const currentValue = parseInt(input.value);
+            if (currentValue < parseInt(input.max)) {
+                input.value = currentValue + 1;
+            }
+        });
+    });
+
+    // Живой поиск для кастомного запроса
+    const equipmentNameInput = document.getElementById('equipmentName');
+    const suggestionsDiv = document.getElementById('equipmentSuggestions');
+
+    equipmentNameInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        if (searchTerm.length < 2) {
+            suggestionsDiv.innerHTML = '';
+            return;
+        }
+
+        fetch(`/user/api/equipment/search?term=${searchTerm}`)
+            .then(response => response.json())
+            .then(data => {
+                suggestionsDiv.innerHTML = '';
+                data.forEach(item => {
+                    const suggestion = document.createElement('a');
+                    suggestion.href = '#';
+                    suggestion.className = 'list-group-item list-group-item-action';
+                    suggestion.textContent = item.name;
+                    suggestion.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        equipmentNameInput.value = item.name;
+                        suggestionsDiv.innerHTML = '';
+                    });
+                    suggestionsDiv.appendChild(suggestion);
+                });
+            });
     });
 });
 </script>

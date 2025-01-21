@@ -39,18 +39,21 @@ class Storage(db.Model):
 
 class Requests(db.Model):
     __tablename__ = 'requests'
-    id = db.Column(db.Integer(), primary_key=True, nullable=False)
-    user_id = db.Column(db.Integer(), db.ForeignKey('users.id'))
-    equipment_id = db.Column(db.Integer(), db.ForeignKey('storage.id'))
-    count = db.Column(db.Integer(), default=1)
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    equipment_id = db.Column(db.Integer, db.ForeignKey('storage.id'), nullable=True)
+    count = db.Column(db.Integer, nullable=False, default=1)
     description = db.Column(db.Text)
-    request_type = db.Column(db.String(20))  # 'получение' или 'ремонт'
-    status = db.Column(db.Boolean, nullable=True, default=None)
-    created_at = db.Column(db.DateTime, default=datetime)
-
-    # Добавляем отношения
-    storage = db.relationship('Storage', backref='requests')
-    user = db.relationship('User', backref='requests')
+    request_type = db.Column(db.String(50), nullable=False)
+    status = db.Column(db.Integer)  # None - в обработке, 1 - одобрено, 0 - отклонено
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    custom_description = db.Column(db.Text)
+    equipment_name = db.Column(db.String(64))  # Добавляем поле для названия кастомного оборудования
+    status_viewed = db.Column(db.Boolean, default=True)
+    status_changed_at = db.Column(db.DateTime)
+    
+    storage = db.relationship('Storage', backref=db.backref('requests', lazy=True))
+    user = db.relationship('User', backref=db.backref('requests', lazy=True))
 
 
 class Purchases(db.Model, UserMixin):

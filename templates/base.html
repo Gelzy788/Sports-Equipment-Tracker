@@ -47,9 +47,9 @@
                     <li class="nav-item">
                         <a class="nav-link position-relative" href="{{ url_for('view_requests') }}">
                             <i class="fas fa-file-alt"></i> Заявки
-                            {% if notifications_count > 0 %}
+                            {% if notification_count > 0 %}
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ notifications_count }}
+                                {{ notification_count }}
                             </span>
                             {% endif %}
                         </a>
@@ -57,9 +57,9 @@
                     <li class="nav-item">
                         <a class="nav-link position-relative" href="{{ url_for('user.notifications') }}">
                             <i class="fas fa-bell"></i>
-                            {% if notifications_count > 0 %}
+                            {% if notification_count > 0 %}
                             <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ notifications_count }}
+                                {{ notification_count }}
                                 <span class="visually-hidden">непрочитанных уведомлений</span>
                             </span>
                             {% endif %}

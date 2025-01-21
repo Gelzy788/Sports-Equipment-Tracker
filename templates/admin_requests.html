@@ -13,6 +13,7 @@
                     <th>Оборудование</th>
                     <th>Количество</th>
                     <th>Тип заявки</th>
+                    <th>Описание</th>
                     <th>Дата заявки</th>
                     <th>Статус</th>
                     <th>Действия</th>
@@ -22,9 +23,22 @@
                 {% for request in requests %}
                 <tr>
                     <td>{{ request.user.username }}</td>
-                    <td>{{ request.storage.name }}</td>
+                    <td>
+                        {% if request.equipment_id %}
+                            {{ request.storage.name }}
+                        {% else %}
+                            {{ request.equipment_name }}
+                        {% endif %}
+                    </td>
                     <td>{{ request.count }}</td>
                     <td>{{ request.request_type }}</td>
+                    <td>
+                        {% if request.custom_description %}
+                            {{ request.custom_description }}
+                        {% else %}
+                            {{ request.description or '-' }}
+                        {% endif %}
+                    </td>
                     <td>{{ request.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
                     <td>
                         {% if request.status == None %}
