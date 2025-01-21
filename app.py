@@ -8,6 +8,13 @@ from werkzeug.utils import secure_filename
 from user_app import user_bp
 import os
 
+# Проверяем наличие файла базы данных
+if not os.path.exists('database.db'):
+    print("База данных не найдена. Создаем новую базу данных...")
+    from database import init_database
+    init_database()
+    print("База данных успешно создана!")
+
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
