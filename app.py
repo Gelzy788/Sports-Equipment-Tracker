@@ -5,10 +5,14 @@ from config import app, login_manager, ALLOWED_EXTENSIONS
 from database import add_user, update_profile_picture
 from werkzeug.security import check_password_hash
 from werkzeug.utils import secure_filename
+from user_app import user_bp
 import os
 
 login_manager.init_app(app)
 login_manager.login_view = 'login'
+
+# Регистрируем Blueprint для пользовательских маршрутов
+app.register_blueprint(user_bp, url_prefix='/user')
 
 
 @login_manager.user_loader
