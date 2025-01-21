@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Мое оборудование</h2>
+    <div class="row">
+        {% if equipment %}
+            {% for item in equipment %}
+            <div class="col-md-4 mb-4">
+                <div class="card equipment-card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.name }}</h5>
+                        <p class="card-text">{{ item.description }}</p>
+                        <p class="card-text">
+                            <small class="text-muted">Получено: {{ item.assigned_date.strftime('%d.%m.%Y') }}</small>
+                        </p>
+                        <div class="d-flex justify-content-between">
+                            <form action="{{ url_for('user.return_equipment', equipment_id=item.id) }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-warning">Вернуть</button>
+                            </form>
+                            <a href="{{ url_for('user.repair_request', equipment_id=item.id) }}" class="btn btn-outline-danger">
+                                Сообщить о проблеме
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="col-12">
+                <div class="alert alert-info">
+                    У вас пока нет оборудования. 
+                    <a href="{{ url_for('user.available_equipment') }}" class="alert-link">Посмотреть доступное оборудование</a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,6 +1,7 @@
-uvicorn==0.17.6
-Flask==2.1.1
+uvicorn==0.34.0
+SQLAlchemy==1.4.36
+Flask==2.0.3
 Flask-SQLAlchemy==2.5.1
-Flask-Login==0.5.0
-Werkzeug==2.1.1
+Flask-Login==0.6.2
+Werkzeug==2.0.3
 click==8.1.2

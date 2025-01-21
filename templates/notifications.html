@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Уведомления</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-info alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    {% if notifications %}
+    <div class="list-group">
+        {% for notification in notifications %}
+        <div class="list-group-item list-group-item-action">
+            <div class="d-flex w-100 justify-content-between">
+                <h5 class="mb-1">
+                    {% if notification.request_type == 'получение' %}
+                        <i class="fas fa-hand-holding text-primary"></i>
+                    {% else %}
+                        <i class="fas fa-tools text-warning"></i>
+                    {% endif %}
+                    {{ notification.storage.name }}
+                </h5>
+                <small class="text-muted">{{ notification.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+            </div>
+            <p class="mb-1">
+                {% if notification.request_type == 'получение' %}
+                    Ваша заявка на получение оборудования
+                {% else %}
+                    Заявка на ремонт/замену оборудования
+                {% endif %}
+                {% if notification.status %}
+                    <span class="badge bg-success">Одобрена</span>
+                {% else %}
+                    <span class="badge bg-warning">Ожидает рассмотрения</span>
+                {% endif %}
+            </p>
+            {% if notification.description %}
+            <p class="mb-1">
+                <small>{{ notification.description }}</small>
+            </p>
+            {% endif %}
+            <div class="mt-2">
+                {% if not notification.status %}
+                <form action="{{ url_for('user.cancel_request', request_id=notification.id) }}" 
+                      method="post" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fas fa-times"></i> Отменить заявку
+                    </button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="fas fa-bell-slash"></i> У вас нет новых уведомлений
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

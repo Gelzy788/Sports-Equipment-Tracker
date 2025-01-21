@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header">
+                    <h3>Заявка на ремонт/замену оборудования</h3>
+                </div>
+                <div class="card-body">
+                    <div class="equipment-details mb-4">
+                        <h4>{{ equipment.name }}</h4>
+                        <p class="text-muted">ID: {{ equipment.id }}</p>
+                    </div>
+
+                    <form method="post">
+                        <div class="form-group mb-3">
+                            <label for="issue_type">Тип проблемы:</label>
+                            <select class="form-control" id="issue_type" name="issue_type" required>
+                                <option value="damage">Повреждение</option>
+                                <option value="malfunction">Неисправность</option>
+                                <option value="wear">Износ</option>
+                                <option value="other">Другое</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="description">Описание проблемы:</label>
+                            <textarea class="form-control" id="description" name="description" rows="4" required></textarea>
+                        </div>
+
+                        <div class="form-group mb-3">
+                            <label for="urgency">Срочность:</label>
+                            <select class="form-control" id="urgency" name="urgency" required>
+                                <option value="low">Низкая</option>
+                                <option value="medium">Средняя</option>
+                                <option value="high">Высокая</option>
+                            </select>
+                        </div>
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('user.my_equipment') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Назад
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-tools"></i> Отправить заявку
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Доступное оборудование</h2>
+    <div class="row">
+        {% for item in equipment %}
+        <div class="col-md-4 mb-4">
+            <div class="card equipment-card">
+                <div class="card-body">
+                    <h5 class="card-title">{{ item.name }}</h5>
+                    <p class="card-text">{{ item.description }}</p>
+                    <p class="card-text">
+                        <small class="text-muted">Доступно: {{ item.count }}</small>
+                    </p>
+                    <form action="{{ url_for('user.request_equipment', equipment_id=item.id) }}" method="post" class="request-form">
+                        <div class="mb-3 quantity-input" style="display: none;">
+                            <label for="quantity-{{ item.id }}" class="form-label">Количество:</label>
+                            <input type="number" class="form-control" id="quantity-{{ item.id }}" 
+                                   name="quantity" min="1" max="{{ item.count }}" required>
+                        </div>
+                        <button type="button" class="btn btn-primary request-btn">Запросить</button>
+                        <button type="submit" class="btn btn-success submit-btn" style="display: none;">Подтвердить</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const forms = document.querySelectorAll('.request-form');
+    
+    forms.forEach(form => {
+        const requestBtn = form.querySelector('.request-btn');
+        const submitBtn = form.querySelector('.submit-btn');
+        const quantityInput = form.querySelector('.quantity-input');
+        
+        requestBtn.addEventListener('click', function() {
+            requestBtn.style.display = 'none';
+            submitBtn.style.display = 'inline-block';
+            quantityInput.style.display = 'block';
+        });
+        
+        // Проверка введенного количества
+        const input = form.querySelector('input[type="number"]');
+        input.addEventListener('input', function() {
+            const max = parseInt(this.getAttribute('max'));
+            const value = parseInt(this.value);
+            
+            if (value > max) {
+                this.value = max;
+            }
+            if (value < 1) {
+                this.value = 1;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

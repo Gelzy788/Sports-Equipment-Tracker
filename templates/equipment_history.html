@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>История использования оборудования</h2>
+    <div class="history-timeline mt-4">
+        {% if history %}
+            {% for record in history %}
+            <div class="history-item">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ record.equipment.name }}</h5>
+                        <p class="card-text">
+                            <strong>Статус:</strong>
+                            <span class="request-status {{ record.status }}">
+                                {{ record.status }}
+                            </span>
+                        </p>
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Дата запроса: {{ record.request_date.strftime('%d.%m.%Y') }}
+                            </small>
+                        </p>
+                        {% if record.return_date %}
+                        <p class="card-text">
+                            <small class="text-muted">
+                                Дата возврата: {{ record.return_date.strftime('%d.%m.%Y') }}
+                            </small>
+                        </p>
+                        {% endif %}
+                        {% if record.notes %}
+                        <p class="card-text">
+                            <strong>Примечания:</strong> {{ record.notes }}
+                        </p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="alert alert-info">
+                История использования оборудования пуста.
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

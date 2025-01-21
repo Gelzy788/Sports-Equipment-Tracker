@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Мои заявки</h2>
+
+    {% with messages = get_flashed_messages() %}
+    {% if messages %}
+    {% for message in messages %}
+    <div class="alert alert-info alert-dismissible fade show">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endfor %}
+    {% endif %}
+    {% endwith %}
+
+    <div class="row mb-4">
+        <div class="col">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-filter="all">Все</button>
+                <button type="button" class="btn btn-outline-warning" data-filter="pending">Ожидают</button>
+                <button type="button" class="btn btn-outline-success" data-filter="approved">Одобрены</button>
+            </div>
+        </div>
+    </div>
+
+    {% if requests %}
+    <div class="row">
+        {% for request in requests %}
+        <div class="col-md-6 mb-4 request-item" 
+             data-status="{{ 'approved' if request.status else 'pending' }}">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">{{ request.storage.name }}</h5>
+                    <span class="badge {% if not request.status %}bg-warning{% else %}bg-success{% endif %}">
+                        {% if not request.status %}Ожидает{% else %}Одобрено{% endif %}
+                    </span>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        <strong>Тип заявки:</strong> {{ request.request_type }}
+                    </p>
+                    <p class="card-text">
+                        <strong>Количество:</strong> {{ request.count }}
+                    </p>
+                    <p class="card-text">
+                        <strong>Дата создания:</strong> 
+                        {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                    </p>
+                    {% if request.description %}
+                    <p class="card-text">
+                        <strong>Описание:</strong><br>
+                        {{ request.description }}
+                    </p>
+                    {% endif %}
+                </div>
+                {% if not request.status %}
+                <div class="card-footer">
+                    <form action="{{ url_for('user.cancel_request', request_id=request.id) }}" 
+                          method="post" class="d-inline">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-times"></i> Отменить заявку
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <p class="mb-0">У вас пока нет заявок. 
+            <a href="{{ url_for('user.available_equipment') }}" class="alert-link">
+                Посмотрите доступное оборудование
+            </a>
+        </p>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('[data-filter]');
+    const requestItems = document.querySelectorAll('.request-item');
+    
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            // Remove active class from all buttons
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            // Add active class to clicked button
+            this.classList.add('active');
+            
+            const filter = this.getAttribute('data-filter');
+            
+            requestItems.forEach(item => {
+                const status = item.getAttribute('data-status');
+                if (filter === 'all' || filter === status) {
+                    item.style.display = '';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
+    
+    // Автоматически показываем ожидающие заявки при загрузке
+    const pendingButton = document.querySelector('[data-filter="pending"]');
+    if (pendingButton) {
+        pendingButton.click();
+    }
+});
+</script>
+{% endblock %}
