@@ -16,10 +16,16 @@ class User(db.Model, UserMixin):
 
 class Equipment(db.Model):
     __tablename__ = 'equipment'
-    id = db.Column(db.Integer, primary_key=True)
-    equipment_id = db.Column(db.Integer(), db.ForeignKey('storage.id'))
-    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'))
+    equipment_id = db.Column(db.Integer(), db.ForeignKey(
+        'storage.id'), primary_key=True)
+    user_id = db.Column(db.Integer(), db.ForeignKey(
+        'users.id'), primary_key=True)
     count = db.Column(db.Integer(), default=1)
+
+    __table_args__ = (db.UniqueConstraint(
+        'equipment_id', 'user_id', name='uq_equipment_user'),)
+
+    storage = db.relationship('Storage', backref='equipment')
 
 
 class Storage(db.Model):

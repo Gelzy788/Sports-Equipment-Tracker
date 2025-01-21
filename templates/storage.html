@@ -15,11 +15,60 @@
     {% endif %}
     {% endwith %}
 
+    <button id="toggleMode" class="btn btn-primary mb-3" onclick="toggleMode()">Переключить на сбор инвентаря</button>
+
+    <div id="giveInventory" class="mode">
+        <h3 class="mt-4">Выдать инвентарь пользователю</h3>
+        <form method="POST">
+            <input type="hidden" name="action" value="give">
+            <select name="storage_id" required>
+                {% for item in items %}
+                <option value="{{ item.id }}">{{ item.name }} ({{ item.count }})</option>
+                {% endfor %}
+            </select>
+
+            <select name="user_id" required>
+                {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+                {% endfor %}
+            </select>
+
+            <input type="number" name="quantity" min="1" placeholder="Количество" required>
+
+            <button type="submit">Выдать</button>
+        </form>
+    </div>
+
+    <div id="takeBackInventory" class="mode" style="display: none;">
+        <h3 class="mt-4">Забрать инвентарь у пользователя</h3>
+        <form method="POST">
+            <input type="hidden" name="action" value="take_back">
+            <select name="user_id" id="userSelect" onchange="showUserInventory(this.value)" required>
+                {% for user in users %}
+                <option value="{{ user.id }}">{{ user.username }}</option>
+                {% endfor %}
+            </select>
+
+            <select name="equipment_id" required>
+                {% for item in items %}
+                <option value="{{ item.id }}">{{ item.name }}</option>
+                {% endfor %}
+            </select>
+
+            <input type="number" name="quantity" min="1" placeholder="Количество" required>
+
+            <button type="submit">Забрать</button>
+        </form>
+
+        <h4 class="mt-4">Инвентарь выбранного пользователя</h4>
+        <div id="userInventory"></div>
+    </div>
+
+    <h3 class="mt-4">Инвентарь на складе</h3>
     <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead class="thead-dark">
                 <tr>
-                    <th>ID</th>
                     <th>Наименование</th>
                     <th>Количество</th>
                     {% if current_user.admin %}
@@ -30,7 +79,6 @@
             <tbody>
                 {% for item in items %}
                 <tr>
-                    <td>{{ item.id }}</td>
                     <td>{{ item.name }}</td>
                     <td>{{ item.count }}</td>
                     {% if current_user.admin %}
@@ -55,23 +103,51 @@
 
 {% if current_user.admin %}
 <script>
-    function deleteItem(itemId) {
-        if (confirm('Вы уверены, что хотите удалить этот предмет?')) {
-            fetch(`/storage/delete/${itemId}`, {
-                method: 'DELETE',
-            }).then(response => response.json())
-                .then(data => {
-                    if (data.error) {
-                        alert(data.error);
-                        return;
-                    }
-                    window.location.reload();
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert('Произошла ошибка при удалении предмета');
-                });
+    function toggleMode() {
+        const giveInventory = document.getElementById('giveInventory');
+        const takeBackInventory = document.getElementById('takeBackInventory');
+        const toggleButton = document.getElementById('toggleMode');
+
+        if (giveInventory.style.display === 'none') {
+            giveInventory.style.display = 'block';
+            takeBackInventory.style.display = 'none';
+            toggleButton.innerText = 'Переключить на сбор инвентаря';
+        } else {
+            giveInventory.style.display = 'none';
+            takeBackInventory.style.display = 'block';
+            toggleButton.innerText = 'Переключить на выдачу инвентаря';
         }
+    }
+
+    function showUserInventory(userId) {
+        fetch(`/user_inventory/${userId}`)
+            .then(response => response.json())
+            .then(data => {
+                const userInventoryDiv = document.getElementById('userInventory');
+                userInventoryDiv.innerHTML = ''; // Очистить предыдущий инвентарь
+
+                if (data.equipment.length > 0) {
+                    const table = document.createElement('table');
+                    table.className = 'table table-striped';
+                    const header = table.createTHead();
+                    const headerRow = header.insertRow(0);
+                    headerRow.insertCell(0).innerText = 'ID предмета';
+                    headerRow.insertCell(1).innerText = 'Наименование';
+                    headerRow.insertCell(2).innerText = 'Количество';
+
+                    const body = table.createTBody();
+                    data.equipment.forEach(item => {
+                        const row = body.insertRow();
+                        row.insertCell(0).innerText = item.equipment_id;
+                        row.insertCell(1).innerText = item.storage.name;
+                        row.insertCell(2).innerText = item.count;
+                    });
+
+                    userInventoryDiv.appendChild(table);
+                } else {
+                    userInventoryDiv.innerText = 'У пользователя нет инвентаря.';
+                }
+            });
     }
 </script>
 {% endif %}

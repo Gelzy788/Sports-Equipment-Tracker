@@ -115,15 +115,70 @@ def get_data():
 
 
 # Страница инвентаря (склада)
-@app.route("/storage")
+@app.route("/storage", methods=['GET', 'POST'])
 @login_required
 def storage():
     if not current_user.admin:
-        flash("Доступ запрещен. Только администраторы могут просматривать склад.")
-        return redirect(url_for('get_data'))
+        flash('Доступ запрещен')
+        return redirect(url_for('index'))
 
     storage_items = Storage.query.all()
-    return render_template("storage.html", items=storage_items)
+    users = User.query.filter_by(admin=False).all()
+
+    if request.method == 'POST':
+        if 'action' in request.form and request.form['action'] == 'give':
+            # Логика выдачи инвентаря
+            storage_id = request.form.get('storage_id')
+            user_id = request.form.get('user_id')
+            quantity = int(request.form.get('quantity'))
+
+            storage_item = Storage.query.get(storage_id)
+            user = User.query.get(user_id)
+
+            if storage_item and user and storage_item.count >= quantity:
+                storage_item.count -= quantity
+
+                existing_equipment = Equipment.query.filter_by(
+                    equipment_id=storage_item.id, user_id=user.id).first()
+
+                if existing_equipment:
+                    existing_equipment.count += quantity
+                else:
+                    new_equipment = Equipment(
+                        equipment_id=storage_item.id, user_id=user.id, count=quantity)
+                    db.session.add(new_equipment)
+
+                db.session.commit()
+                flash('Инвентарь успешно передан')
+            else:
+                flash('Ошибка при передаче инвентаря')
+
+        elif 'action' in request.form and request.form['action'] == 'take_back':
+            # Логика забирания инвентаря
+            user_id = request.form.get('user_id')
+            equipment_id = request.form.get('equipment_id')
+            quantity = int(request.form.get('quantity'))
+
+            user = User.query.get(user_id)
+            equipment = Equipment.query.filter_by(
+                user_id=user.id, equipment_id=equipment_id).first()
+
+            if equipment and equipment.count >= quantity:
+                equipment.count -= quantity
+                if equipment.count == 0:
+                    db.session.delete(equipment)
+
+                # Добавляем количество на склад
+                storage_item = Storage.query.get(equipment_id)
+                if storage_item:
+                    storage_item.count += quantity
+
+                db.session.commit()
+                flash('Инвентарь успешно забран у пользователя')
+            else:
+                flash('Ошибка: недостаточно инвентаря для забора')
+
+    return render_template('storage.html', items=storage_items, users=users)
 
 
 # Добавление нового предмета
@@ -209,23 +264,18 @@ def toggle_admin(user_id):
     if not current_user.admin:
         return jsonify({'error': 'Доступ запрещен'}), 403
 
-    user = User.query.get_or_404(user_id)
-
     # Предотвращаем снятие прав у самого себя
-    if user.id == current_user.id:
+    if user_id == current_user.id:
         return jsonify({'error': 'Нельзя изменить права администратора у самого себя'}), 400
 
-    try:
-        user.admin = not user.admin
-        db.session.commit()
+    user = User.query.get_or_404(user_id)
+    user.admin = not user.admin
+    db.session.commit()
 
-        return jsonify({
-            'message': f"Права администратора {'предоставлены' if user.admin else 'отозваны'}",
-            'is_admin': user.admin
-        })
-    except Exception as e:
-        db.session.rollback()
-        return jsonify({'error': 'Произошла ошибка при обновлении прав'}), 500
+    return jsonify({
+        'message': f"Права администратора {'предоставлены' if user.admin else 'отозваны'}",
+        'admin': user.admin
+    })
 
 
 # Страница планирования закупок
@@ -313,6 +363,34 @@ def delete_purchase(purchase_id):
     db.session.commit()
 
     return jsonify({'message': 'Закупка удалена'}), 200
+
+
+@app.route('/my_inventory')
+@login_required
+def my_inventory():
+    user_equipment = Equipment.query.filter_by(user_id=current_user.id).all()
+    return render_template('my_inventory.html', equipment=user_equipment)
+
+
+@app.route("/user_inventory/<int:user_id>")
+@login_required
+def user_inventory(user_id):
+    user_equipment = Equipment.query.filter_by(user_id=user_id).all()
+    return jsonify({
+        'equipment': [{
+            'equipment_id': item.equipment_id,
+            'storage': Storage.query.get(item.equipment_id),
+            'count': item.count
+        } for item in user_equipment]
+    })
+
+
+@app.route("/profile/<int:user_id>")
+@login_required
+def user_profile(user_id):
+    user = User.query.get_or_404(user_id)
+    user_equipment = Equipment.query.filter_by(user_id=user.id).all()
+    return render_template("user_profile.html", user=user, equipment=user_equipment)
 
 
 if __name__ == '__main__':

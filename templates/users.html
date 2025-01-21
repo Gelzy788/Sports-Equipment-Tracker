@@ -2,7 +2,7 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Управление пользователями</h2>
+    <h2>Пользователи</h2>
 
     {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -15,44 +15,28 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover align-middle">
+                <table class="table table-striped table-hover">
                     <thead class="thead-dark">
                         <tr>
-                            <th>Фото</th>
                             <th>Имя пользователя</th>
                             <th>Email</th>
-                            <th>Администратор</th>
+                            <th>Статус</th>
                             <th>Действия</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for user in users %}
                         <tr>
-                            <td>
-                                {% if user.profile_picture %}
-                                <img src="{{ url_for('static', filename='profile_images/' + user.profile_picture) }}"
-                                    class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;"
-                                    alt="Фото профиля">
-                                {% else %}
-                                <img src="{{ url_for('static', filename='profile_images/default.png') }}"
-                                    class="rounded-circle" style="width: 40px; height: 40px; object-fit: cover;"
-                                    alt="Фото профиля по умолчанию">
-                                {% endif %}
-                            </td>
-                            <td>{{ user.username }}</td>
+                            <td><a href="{{ url_for('user_profile', user_id=user.id) }}">{{ user.username }}</a></td>
                             <td>{{ user.email }}</td>
-                            <td>
-                                <span class="badge {% if user.admin %}bg-success{% else %}bg-secondary{% endif %}">
-                                    {% if user.admin %}Да{% else %}Нет{% endif %}
-                                </span>
-                            </td>
+                            <td>{{ 'Администратор' if user.admin else 'Обычный пользователь' }}</td>
                             <td>
                                 {% if user.id != current_user.id %}
-                                <button class="btn btn-sm btn-secondary" onclick="toggleAdmin('{{ user.id }}')">
-                                    Изменить права
+                                <button class="btn btn-sm btn-warning" onclick="toggleAdmin('{{ user.id }}')">
+                                    {{ 'Снять права' if user.admin else 'Предоставить права' }}
                                 </button>
                                 {% else %}
-                                <span class="text-muted">Текущий пользователь</span>
+                                <span class="text-muted">Нельзя изменить права у самого себя</span>
                                 {% endif %}
                             </td>
                         </tr>
