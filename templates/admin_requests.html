@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Управление заявками пользователей</h2>
+    
+    {% if requests %}
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Пользователь</th>
+                    <th>Оборудование</th>
+                    <th>Количество</th>
+                    <th>Тип заявки</th>
+                    <th>Дата заявки</th>
+                    <th>Статус</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for request in requests %}
+                <tr>
+                    <td>{{ request.user.username }}</td>
+                    <td>{{ request.storage.name }}</td>
+                    <td>{{ request.count }}</td>
+                    <td>{{ request.request_type }}</td>
+                    <td>{{ request.created_at.strftime('%d.%m.%Y %H:%M') }}</td>
+                    <td>
+                        {% if request.status == None %}
+                            <span class="badge bg-warning">На рассмотрении</span>
+                        {% elif request.status == 1 %}
+                            <span class="badge bg-success">Одобрено</span>
+                        {% elif request.status == 0 %}
+                            <span class="badge bg-danger">Отклонено</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if request.status == None %}
+                        <div class="btn-group" role="group">
+                            <form action="{{ url_for('process_request', request_id=request.id, action='approve') }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn btn-success btn-sm">Одобрить</button>
+                            </form>
+                            <form action="{{ url_for('process_request', request_id=request.id, action='reject') }}" method="POST" style="display: inline;">
+                                <button type="submit" class="btn btn-danger btn-sm ms-2">Отклонить</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        Нет активных заявок на рассмотрение.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

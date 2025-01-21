@@ -409,5 +409,64 @@ def user_profile(user_id):
     return render_template("user_profile.html", user=user, equipment=user_equipment)
 
 
+# Страница заявок (для всех пользователей)
+@app.route("/requests")
+@login_required
+def view_requests():
+    if current_user.admin:
+        # Для админа показываем все заявки с возможностью управления
+        requests = Requests.query.order_by(Requests.created_at.desc()).all()
+        return render_template('admin_requests.html', requests=requests)
+    else:
+        # Для обычного пользователя показываем только его заявки
+        user_requests = Requests.query.filter_by(user_id=current_user.id).order_by(Requests.created_at.desc()).all()
+        return render_template('my_requests.html', requests=user_requests)
+
+
+# Обработка заявки (одобрение/отклонение)
+@app.route("/admin/request/<int:request_id>/<action>", methods=['POST'])
+@login_required
+def process_request(request_id, action):
+    if not current_user.admin:
+        flash('У вас нет доступа к этой функции', 'danger')
+        return redirect(url_for('view_requests'))
+    
+    request = Requests.query.get_or_404(request_id)
+    storage_item = Storage.query.get(request.equipment_id)
+    
+    if not storage_item:
+        flash('Оборудование не найдено', 'danger')
+        return redirect(url_for('view_requests'))
+    
+    try:
+        if action == 'approve':
+            # Проверяем все активные заявки на это оборудование
+            active_requests = Requests.query.filter_by(
+                equipment_id=request.equipment_id,
+                status=None
+            ).order_by(Requests.created_at).all()
+            
+            # Считаем общее количество запрошенного оборудования в активных заявках
+            total_requested = sum(r.count for r in active_requests if r.id <= request.id)
+            
+            if storage_item.count >= total_requested:
+                request.status = True
+                storage_item.count -= request.count
+                flash('Заявка одобрена', 'success')
+            else:
+                flash('Недостаточно оборудования на складе с учетом всех активных заявок', 'danger')
+                return redirect(url_for('view_requests'))
+        elif action == 'reject':
+            request.status = False
+            flash('Заявка отклонена', 'danger')
+        
+        db.session.commit()
+        return redirect(url_for('view_requests'))
+    
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Произошла ошибка при обработке заявки: {str(e)}', 'danger')
+        return redirect(url_for('view_requests'))
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

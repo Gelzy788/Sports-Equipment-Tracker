@@ -15,101 +15,195 @@
     {% endif %}
     {% endwith %}
 
-    <div class="row mb-4">
-        <div class="col">
-            <div class="btn-group" role="group">
-                <button type="button" class="btn btn-outline-primary active" data-filter="all">Все</button>
-                <button type="button" class="btn btn-outline-warning" data-filter="pending">Ожидают</button>
-                <button type="button" class="btn btn-outline-success" data-filter="approved">Одобрены</button>
-            </div>
-        </div>
-    </div>
+    <ul class="nav nav-tabs mb-4" id="requestTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="all-tab" data-bs-toggle="tab" data-bs-target="#all" type="button" role="tab">
+                Все заявки
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="pending-tab" data-bs-toggle="tab" data-bs-target="#pending" type="button" role="tab">
+                На рассмотрении
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="approved-tab" data-bs-toggle="tab" data-bs-target="#approved" type="button" role="tab">
+                Одобренные
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="rejected-tab" data-bs-toggle="tab" data-bs-target="#rejected" type="button" role="tab">
+                Отклоненные
+            </button>
+        </li>
+    </ul>
 
     {% if requests %}
-    <div class="row">
-        {% for request in requests %}
-        <div class="col-md-6 mb-4 request-item" 
-             data-status="{{ 'approved' if request.status else 'pending' }}">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">{{ request.storage.name }}</h5>
-                    <span class="badge {% if not request.status %}bg-warning{% else %}bg-success{% endif %}">
-                        {% if not request.status %}Ожидает{% else %}Одобрено{% endif %}
-                    </span>
+    <div class="tab-content" id="requestTabsContent">
+        <!-- Все заявки -->
+        <div class="tab-pane fade show active" id="all" role="tabpanel">
+            <div class="row">
+                {% for request in requests %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ request.storage.name }}</h5>
+                            <span class="badge {% if request.status == None %}bg-warning{% elif request.status == 1 %}bg-success{% elif request.status == 0 %}bg-danger{% endif %}">
+                                {% if request.status == None %}На рассмотрении{% elif request.status == 1 %}Одобрено{% elif request.status == 0 %}Отклонено{% endif %}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                <strong>Тип заявки:</strong> {{ request.request_type }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Количество:</strong> {{ request.count }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Дата создания:</strong> {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            </p>
+                            {% if request.description %}
+                            <p class="card-text">
+                                <strong>Описание:</strong><br>
+                                {{ request.description }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        {% if request.status == None %}
+                        <div class="card-footer">
+                            <form action="{{ url_for('user.cancel_request', request_id=request.id) }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm">Отменить заявку</button>
+                            </form>
+                        </div>
+                        {% endif %}
+                    </div>
                 </div>
-                <div class="card-body">
-                    <p class="card-text">
-                        <strong>Тип заявки:</strong> {{ request.request_type }}
-                    </p>
-                    <p class="card-text">
-                        <strong>Количество:</strong> {{ request.count }}
-                    </p>
-                    <p class="card-text">
-                        <strong>Дата создания:</strong> 
-                        {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
-                    </p>
-                    {% if request.description %}
-                    <p class="card-text">
-                        <strong>Описание:</strong><br>
-                        {{ request.description }}
-                    </p>
-                    {% endif %}
-                </div>
-                {% if not request.status %}
-                <div class="card-footer">
-                    <form action="{{ url_for('user.cancel_request', request_id=request.id) }}" 
-                          method="post" class="d-inline">
-                        <button type="submit" class="btn btn-danger btn-sm">
-                            <i class="fas fa-times"></i> Отменить заявку
-                        </button>
-                    </form>
-                </div>
-                {% endif %}
+                {% endfor %}
             </div>
         </div>
-        {% endfor %}
+
+        <!-- На рассмотрении -->
+        <div class="tab-pane fade" id="pending" role="tabpanel">
+            <div class="row">
+                {% for request in requests if request.status == None %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ request.storage.name }}</h5>
+                            <span class="badge bg-warning">На рассмотрении</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                <strong>Тип заявки:</strong> {{ request.request_type }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Количество:</strong> {{ request.count }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Дата создания:</strong> {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            </p>
+                            {% if request.description %}
+                            <p class="card-text">
+                                <strong>Описание:</strong><br>
+                                {{ request.description }}
+                            </p>
+                            {% endif %}
+                        </div>
+                        <div class="card-footer">
+                            <form action="{{ url_for('user.cancel_request', request_id=request.id) }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-danger btn-sm">Отменить заявку</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Одобренные -->
+        <div class="tab-pane fade" id="approved" role="tabpanel">
+            <div class="row">
+                {% for request in requests if request.status == 1 %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ request.storage.name }}</h5>
+                            <span class="badge bg-success">Одобрено</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                <strong>Тип заявки:</strong> {{ request.request_type }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Количество:</strong> {{ request.count }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Дата создания:</strong> {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            </p>
+                            {% if request.description %}
+                            <p class="card-text">
+                                <strong>Описание:</strong><br>
+                                {{ request.description }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Отклоненные -->
+        <div class="tab-pane fade" id="rejected" role="tabpanel">
+            <div class="row">
+                {% for request in requests if request.status == 0 %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">{{ request.storage.name }}</h5>
+                            <span class="badge bg-danger">Отклонено</span>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text">
+                                <strong>Тип заявки:</strong> {{ request.request_type }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Количество:</strong> {{ request.count }}
+                            </p>
+                            <p class="card-text">
+                                <strong>Дата создания:</strong> {{ request.created_at.strftime('%d.%m.%Y %H:%M') }}
+                            </p>
+                            {% if request.description %}
+                            <p class="card-text">
+                                <strong>Описание:</strong><br>
+                                {{ request.description }}
+                            </p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
     </div>
     {% else %}
     <div class="alert alert-info">
-        <p class="mb-0">У вас пока нет заявок. 
-            <a href="{{ url_for('user.available_equipment') }}" class="alert-link">
-                Посмотрите доступное оборудование
-            </a>
-        </p>
+        У вас пока нет заявок
     </div>
     {% endif %}
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const filterButtons = document.querySelectorAll('[data-filter]');
-    const requestItems = document.querySelectorAll('.request-item');
-    
-    filterButtons.forEach(button => {
-        button.addEventListener('click', function() {
-            // Remove active class from all buttons
-            filterButtons.forEach(btn => btn.classList.remove('active'));
-            // Add active class to clicked button
-            this.classList.add('active');
-            
-            const filter = this.getAttribute('data-filter');
-            
-            requestItems.forEach(item => {
-                const status = item.getAttribute('data-status');
-                if (filter === 'all' || filter === status) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        });
-    });
-    
-    // Автоматически показываем ожидающие заявки при загрузке
-    const pendingButton = document.querySelector('[data-filter="pending"]');
-    if (pendingButton) {
-        pendingButton.click();
-    }
-});
+    // Инициализация вкладок Bootstrap
+    var triggerTabList = [].slice.call(document.querySelectorAll('#requestTabs button'))
+    triggerTabList.forEach(function(triggerEl) {
+        var tabTrigger = new bootstrap.Tab(triggerEl)
+        triggerEl.addEventListener('click', function(event) {
+            event.preventDefault()
+            tabTrigger.show()
+        })
+    })
+})
 </script>
 {% endblock %}

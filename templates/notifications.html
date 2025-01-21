@@ -32,12 +32,14 @@
             </div>
             <p class="mb-1">
                 {% if notification.request_type == 'получение' %}
-                    Ваша заявка на получение оборудования
+                    Заявка на получение оборудования
                 {% else %}
                     Заявка на ремонт/замену оборудования
                 {% endif %}
-                {% if notification.status %}
+                {% if notification.status == 1 %}
                     <span class="badge bg-success">Одобрена</span>
+                {% elif notification.status == 0 %}
+                    <span class="badge bg-danger">Отклонена</span>
                 {% else %}
                     <span class="badge bg-warning">Ожидает рассмотрения</span>
                 {% endif %}
@@ -49,12 +51,7 @@
             {% endif %}
             <div class="mt-2">
                 {% if not notification.status %}
-                <form action="{{ url_for('user.cancel_request', request_id=notification.id) }}" 
-                      method="post" class="d-inline">
-                    <button type="submit" class="btn btn-danger btn-sm">
-                        <i class="fas fa-times"></i> Отменить заявку
-                    </button>
-                </form>
+
                 {% endif %}
             </div>
         </div>

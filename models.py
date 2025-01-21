@@ -1,3 +1,5 @@
+from sqlalchemy.sql import null
+from sqlalchemy.sql.dml import Null
 from config import db
 from datetime import datetime
 from datetime import time
@@ -43,8 +45,8 @@ class Requests(db.Model):
     count = db.Column(db.Integer(), default=1)
     description = db.Column(db.Text)
     request_type = db.Column(db.String(20))  # 'получение' или 'ремонт'
-    status = db.Column(db.Boolean, default=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    status = db.Column(db.Boolean, nullable=True, default=None)
+    created_at = db.Column(db.DateTime, default=datetime)
 
     # Добавляем отношения
     storage = db.relationship('Storage', backref='requests')

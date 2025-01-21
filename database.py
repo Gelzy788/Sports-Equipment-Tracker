@@ -36,10 +36,6 @@ def init_database():
     with app.app_context():
         db.drop_all()  # Удаляем старые таблицы
         db.create_all()  # Создаем новые таблицы
-
-        # Создаем тестовых пользователей
-        admin = add_user('admin@example.com', 'admin123', 'Admin', True)
-        user1 = add_user('user1@example.com', 'user123', 'User1')
         
         # Добавляем тестовое оборудование
         equipment_list = [
@@ -56,19 +52,23 @@ def init_database():
         
         db.session.commit()
         
-        # Создаем тестовые заявки
-        if user1:
-            storage_items = Storage.query.all()
-            for item in storage_items[:2]:  # Создаем заявки на первые два предмета
-                request = Requests(
-                    user_id=user1.id,
-                    equipment_id=item.id,
-                    count=1,
-                    request_type='получение',
-                    status=False,
-                    created_at=datetime.utcnow()
-                )
-                db.session.add(request)
+        # Создаем тестового администратора
+        admin = add_user(
+            email='admin@mail.ru',
+            password='12345',
+            username='admin',
+            is_admin=True
+        )
+        
+        # Создаем тестового пользователя
+        user = add_user(
+            email='user@mail.ru',
+            password='12345',
+            username='user',
+            is_admin=False
+        )
+        
+        
         
         db.session.commit()
         print("База данных успешно инициализирована!")

@@ -16,10 +16,12 @@ def available_equipment():
 @user_bp.route('/request_equipment/<int:equipment_id>', methods=['POST'])
 @login_required
 def request_equipment(equipment_id):
+    print(f"Создание заявки для equipment_id: {equipment_id}")
     storage = Storage.query.get_or_404(equipment_id)
     
     # Получаем запрошенное количество
     quantity = int(request.form.get('quantity', 1))
+    print(f"Запрошенное количество: {quantity}")
     
     # Проверяем, достаточно ли оборудования
     if quantity > storage.count:
@@ -30,7 +32,7 @@ def request_equipment(equipment_id):
     existing_request = Requests.query.filter_by(
         user_id=current_user.id,
         equipment_id=equipment_id,
-        status=False,
+        status=None,
         request_type='получение'
     ).first()
     
@@ -38,23 +40,25 @@ def request_equipment(equipment_id):
         flash('У вас уже есть активная заявка на это оборудование', 'warning')
         return redirect(url_for('user.available_equipment'))
     
+    print(f"Создание новой заявки для пользователя {current_user.id}")
     # Создаем новую заявку
     new_request = Requests(
         user_id=current_user.id,
         equipment_id=equipment_id,
         request_type='получение',
         count=quantity,
-        status=False
+        status=None,
+        created_at=datetime.utcnow()
     )
     
-    # Уменьшаем доступное количество
-    storage.count -= quantity
-    
     try:
+        print("Добавление заявки в базу данных")
         db.session.add(new_request)
         db.session.commit()
+        print("Заявка успешно создана")
         flash('Заявка успешно создана', 'success')
     except Exception as e:
+        print(f"Ошибка при создании заявки: {str(e)}")
         db.session.rollback()
         flash('Произошла ошибка при создании заявки', 'error')
     
@@ -79,7 +83,7 @@ def repair_request(equipment_id):
             user_id=current_user.id,
             equipment_id=equipment_id,
             description=description,
-            status=False,
+            status=None,
             request_type='ремонт'
         )
         
