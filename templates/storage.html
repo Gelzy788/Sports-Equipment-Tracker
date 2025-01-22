@@ -23,7 +23,14 @@
             <input type="hidden" name="action" value="give">
             <select name="storage_id" required>
                 {% for item in items %}
-                <option value="{{ item.id }}">{{ item.name }} ({{ item.count }})</option>
+                <option value="{{ item.id }}">
+                    {{ item.name }} ({{ item.count }})
+                    {% if item.status == 'сломано' %}
+                        [Сломано]
+                    {% else %}
+                        [Новое]
+                    {% endif %}
+                </option>
                 {% endfor %}
             </select>
 

@@ -35,6 +35,7 @@ class Storage(db.Model):
     id = db.Column(db.Integer(), primary_key=True, nullable=False)
     name = db.Column(db.String(64), nullable=False)
     count = db.Column(db.Integer())
+    status = db.Column(db.String(20), default='новое')  # 'новое' или 'сломано'
 
 
 class Requests(db.Model):

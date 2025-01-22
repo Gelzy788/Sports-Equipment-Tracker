@@ -26,7 +26,11 @@
                     {% else %}
                         <i class="fas fa-tools text-warning"></i>
                     {% endif %}
-                    {{ notification.storage.name }}
+                    {% if notification.storage %}
+                        {{ notification.storage.name }}
+                    {% else %}
+                        {{ notification.equipment_name }}
+                    {% endif %}
                 </h5>
                 <small class="text-muted">{{ notification.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
             </div>

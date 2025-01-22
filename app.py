@@ -450,43 +450,80 @@ def process_request(request_id, action):
                     flash('Оборудование не найдено', 'danger')
                     return redirect(url_for('view_requests'))
                 
-                # Проверяем все активные заявки на это оборудование
-                active_requests = Requests.query.filter_by(
-                    equipment_id=request.equipment_id,
-                    status=None
-                ).order_by(Requests.created_at).all()
-                
-                # Считаем общее количество запрошенного оборудования в активных заявках
-                total_requested = sum(r.count for r in active_requests if r.id <= request.id)
-                
-                if storage_item.count >= total_requested:
-                    request.status = True
-                    request.status_viewed = False
-                    request.status_changed_at = datetime.utcnow()
-                    storage_item.count -= request.count
-                    
-                    # Проверяем, есть ли уже такое оборудование у пользователя
+                if request.request_type == 'ремонт':
+                    # Находим оборудование пользователя
                     user_equipment = Equipment.query.filter_by(
                         user_id=request.user_id,
                         equipment_id=request.equipment_id
                     ).first()
                     
                     if user_equipment:
-                        # Если есть - увеличиваем количество
-                        user_equipment.count += request.count
-                    else:
-                        # Если нет - создаем новую запись
-                        new_equipment = Equipment(
-                            user_id=request.user_id,
-                            equipment_id=request.equipment_id,
-                            count=request.count
-                        )
-                        db.session.add(new_equipment)
+                        # Перемещаем оборудование на склад со статусом "сломано"
+                        broken_storage = Storage.query.filter_by(
+                            name=storage_item.name,
+                            status='сломано'
+                        ).first()
+                        
+                        if broken_storage:
+                            # Если уже есть сломанное оборудование этого типа
+                            broken_storage.count += request.count
+                        else:
+                            # Создаем новую запись для сломанного оборудования
+                            broken_storage = Storage(
+                                name=f"{storage_item.name} (ремонт)",
+                                count=request.count,
+                                status='сломано'
+                            )
+                            db.session.add(broken_storage)
+                        
+                        # Удаляем оборудование у пользователя
+                        if user_equipment.count > request.count:
+                            user_equipment.count -= request.count
+                        else:
+                            db.session.delete(user_equipment)
                     
-                    flash('Заявка одобрена', 'success')
+                    request.status = True
+                    request.status_viewed = False
+                    request.status_changed_at = datetime.utcnow()
+                    flash('Заявка на ремонт одобрена, оборудование перемещено на склад для ремонта', 'success')
                 else:
-                    flash('Недостаточно оборудования на складе с учетом всех активных заявок', 'danger')
-                    return redirect(url_for('view_requests'))
+                    # Проверяем все активные заявки на это оборудование
+                    active_requests = Requests.query.filter_by(
+                        equipment_id=request.equipment_id,
+                        status=None
+                    ).order_by(Requests.created_at).all()
+                    
+                    # Считаем общее количество запрошенного оборудования в активных заявках
+                    total_requested = sum(r.count for r in active_requests if r.id <= request.id)
+                    
+                    if storage_item.count >= total_requested:
+                        request.status = True
+                        request.status_viewed = False
+                        request.status_changed_at = datetime.utcnow()
+                        storage_item.count -= request.count
+                        
+                        # Проверяем, есть ли уже такое оборудование у пользователя
+                        user_equipment = Equipment.query.filter_by(
+                            user_id=request.user_id,
+                            equipment_id=request.equipment_id
+                        ).first()
+                        
+                        if user_equipment:
+                            # Если есть - увеличиваем количество
+                            user_equipment.count += request.count
+                        else:
+                            # Если нет - создаем новую запись
+                            new_equipment = Equipment(
+                                user_id=request.user_id,
+                                equipment_id=request.equipment_id,
+                                count=request.count
+                            )
+                            db.session.add(new_equipment)
+                        
+                        flash('Заявка одобрена', 'success')
+                    else:
+                        flash('Недостаточно оборудования на складе с учетом всех активных заявок', 'danger')
+                        return redirect(url_for('view_requests'))
             else:  # Для кастомных заявок
                 try:
                     # Создаем новое оборудование на складе
