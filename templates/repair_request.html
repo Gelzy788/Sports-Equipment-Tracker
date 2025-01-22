@@ -10,11 +10,11 @@
                 </div>
                 <div class="card-body">
                     <div class="equipment-details mb-4">
-                        <h4>{{ equipment.name }}</h4>
-                        <p class="text-muted">ID: {{ equipment.id }}</p>
+                        <h4>{{ equipment.storage.name }}</h4>
+                        <p class="text-muted">ID: {{ equipment.equipment_id }}</p>
                     </div>
 
-                    <form method="post">
+                    <form method="post" action="{{ url_for('user.create_repair_request', equipment_id=equipment.equipment_id) }}">
                         <div class="form-group mb-3">
                             <label for="issue_type">Тип проблемы:</label>
                             <select class="form-control" id="issue_type" name="issue_type" required>
