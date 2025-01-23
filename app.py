@@ -24,17 +24,32 @@ app.register_blueprint(user_bp, url_prefix='/user')
 
 # Добавляем глобальную переменную для уведомлений
 @app.context_processor
-def inject_notifications():
-    if current_user.is_authenticated:
-        unviewed_count = Requests.query.filter(
-            Requests.user_id == current_user.id,
-            Requests.status_viewed == False,
-            Requests.status.in_([0, 1])  # Проверяем только обработанные заявки
-        ).count()
+def utility_processor():
+    def get_notification_count():
+        if not current_user.is_authenticated:
+            return 0
+            
+        if current_user.admin:
+            # Для админа - количество новых заявок
+            return Requests.query.filter_by(status=None).count()
+        else:
+            # Для обычного пользователя - количество непрочитанных уведомлений
+            return Requests.query.filter(
+                Requests.user_id == current_user.id,
+                Requests.status_viewed == False,
+                Requests.status.in_([0, 1])  # 0 - отклонено, 1 - одобрено
+            ).count()
         
-        return {'notification_count': unviewed_count}
-    return {'notification_count': 0}
-
+    def get_request_count():
+        if current_user.is_authenticated and current_user.admin:
+            # Для админа - количество необработанных заявок
+            return Requests.query.filter_by(status=None, status_viewed=False).count()
+        return 0
+        
+    return dict(
+        notification_count=get_notification_count(),
+        request_count=get_request_count()
+    )
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -242,18 +257,49 @@ def add_item():
 @login_required
 def edit_item(item_id):
     if not current_user.admin:
-        flash("Доступ запрещен")
-        return redirect(url_for('get_data'))
-
-    item = Storage.query.get_or_404(item_id)
-
-    if request.method == 'POST':
-        item.name = request.form.get('name')
-        item.count = request.form.get('count', type=int)
-        db.session.commit()
-        flash('Предмет успешно обновлен')
+        flash('У вас нет доступа к этой функции', 'danger')
         return redirect(url_for('storage'))
-
+        
+    item = Storage.query.get_or_404(item_id)
+    
+    if request.method == 'POST':
+        new_name = request.form.get('name')
+        new_count = int(request.form.get('count'))
+        new_status = request.form.get('status')
+        
+        # Если статус изменился, ищем другие предметы с таким же именем и новым статусом
+        if new_status != item.status:
+            same_item = Storage.query.filter_by(
+                name=new_name.replace(' (ремонт)', ''),  # Убираем "(ремонт)" из имени при поиске
+                status=new_status
+            ).first()
+            
+            if same_item and same_item.id != item.id:
+                # Объединяем с существующим предметом
+                same_item.count += new_count
+                db.session.delete(item)
+                flash('Предмет объединен с существующим', 'success')
+            else:
+                # Обновляем текущий предмет
+                item.name = new_name.replace(' (ремонт)', '')  # Убираем "(ремонт)" из имени
+                item.count = new_count
+                item.status = new_status
+                flash('Предмет успешно обновлен', 'success')
+        else:
+            # Просто обновляем данные
+            item.name = new_name.replace(' (ремонт)', '')  # Убираем "(ремонт)" из имени
+            item.count = new_count
+            item.status = new_status
+            flash('Предмет успешно обновлен', 'success')
+            
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Ошибка при обновлении предмета: {str(e)}', 'danger')
+            
+        return redirect(url_for('storage'))
+        
     return render_template('edit_item.html', item=item)
 
 
@@ -421,7 +467,7 @@ def user_profile(user_id):
 # Страница заявок (для всех пользователей)
 @app.route("/requests")
 @login_required
-def view_requests():
+def requests():
     if current_user.admin:
         # Для админа показываем все заявки с возможностью управления
         requests = Requests.query.order_by(Requests.created_at.desc()).all()
@@ -438,7 +484,7 @@ def view_requests():
 def process_request(request_id, action):
     if not current_user.admin:
         flash('У вас нет доступа к этой функции', 'danger')
-        return redirect(url_for('view_requests'))
+        return redirect(url_for('requests'))
     
     request = Requests.query.get_or_404(request_id)
     
@@ -448,7 +494,7 @@ def process_request(request_id, action):
                 storage_item = Storage.query.get(request.equipment_id)
                 if not storage_item:
                     flash('Оборудование не найдено', 'danger')
-                    return redirect(url_for('view_requests'))
+                    return redirect(url_for('requests'))
                 
                 if request.request_type == 'ремонт':
                     # Находим оборудование пользователя
@@ -458,21 +504,21 @@ def process_request(request_id, action):
                     ).first()
                     
                     if user_equipment:
-                        # Перемещаем оборудование на склад со статусом "сломано"
+                        # Перемещаем оборудование на склад со статусом "ремонт"
                         broken_storage = Storage.query.filter_by(
                             name=storage_item.name,
-                            status='сломано'
+                            status='ремонт'
                         ).first()
                         
                         if broken_storage:
-                            # Если уже есть сломанное оборудование этого типа
+                            # Если уже есть оборудование в ремонте этого типа
                             broken_storage.count += request.count
                         else:
-                            # Создаем новую запись для сломанного оборудования
+                            # Создаем новую запись для оборудования в ремонте
                             broken_storage = Storage(
-                                name=f"{storage_item.name} (ремонт)",
+                                name=storage_item.name,
                                 count=request.count,
-                                status='сломано'
+                                status='ремонт'
                             )
                             db.session.add(broken_storage)
                         
@@ -523,7 +569,7 @@ def process_request(request_id, action):
                         flash('Заявка одобрена', 'success')
                     else:
                         flash('Недостаточно оборудования на складе с учетом всех активных заявок', 'danger')
-                        return redirect(url_for('view_requests'))
+                        return redirect(url_for('requests'))
             else:  # Для кастомных заявок
                 try:
                     # Создаем новое оборудование на складе
@@ -551,7 +597,7 @@ def process_request(request_id, action):
                 except Exception as e:
                     print(f"Ошибка при создании оборудования: {str(e)}")
                     flash('Ошибка при создании оборудования', 'danger')
-                    return redirect(url_for('view_requests'))
+                    return redirect(url_for('requests'))
                 
         elif action == 'reject':
             request.status = False
@@ -560,12 +606,13 @@ def process_request(request_id, action):
             flash('Заявка отклонена', 'danger')
         
         db.session.commit()
-        return redirect(url_for('view_requests'))
+        return redirect(url_for('requests'))
     
     except Exception as e:
         db.session.rollback()
         flash(f'Произошла ошибка при обработке заявки: {str(e)}', 'danger')
-        return redirect(url_for('view_requests'))
+        return redirect(url_for('requests'))
+
 
 @app.route('/api/equipment/search')
 @login_required
@@ -604,7 +651,27 @@ def create_custom_request():
     db.session.commit()
     
     flash('Ваш запрос успешно создан и отправлен на рассмотрение', 'success')
-    return redirect(url_for('view_requests'))
+    return redirect(url_for('requests'))
+
+@app.route('/mark_requests_viewed', methods=['POST'])
+@login_required
+def mark_requests_viewed():
+    if not current_user.admin:
+        return jsonify({'success': False, 'error': 'Unauthorized'}), 403
+        
+    try:
+        # Получаем все необработанные заявки
+        unprocessed_requests = Requests.query.filter_by(status=None).all()
+        
+        # Отмечаем их как просмотренные
+        for request in unprocessed_requests:
+            request.status_viewed = True
+        
+        db.session.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

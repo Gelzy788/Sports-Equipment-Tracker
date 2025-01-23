@@ -15,11 +15,13 @@
                             <small class="text-muted">Получено: {{ item.assigned_date.strftime('%d.%m.%Y') }}</small>
                         </p>
                         <div class="d-flex justify-content-between">
-                            <form action="{{ url_for('user.return_equipment', equipment_id=item.id) }}" method="post" class="d-inline">
-                                <button type="submit" class="btn btn-warning">Вернуть</button>
+                            <form action="{{ url_for('user.return_equipment', equipment_id=item.equipment_id) }}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-undo"></i> Вернуть
+                                </button>
                             </form>
-                            <a href="{{ url_for('user.repair_request', equipment_id=item.id) }}" class="btn btn-outline-danger">
-                                Сообщить о проблеме
+                            <a href="{{ url_for('user.repair_request', equipment_id=item.equipment_id) }}" class="btn btn-outline-danger">
+                                <i class="fas fa-tools"></i> Сообщить о проблеме
                             </a>
                         </div>
                     </div>

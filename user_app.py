@@ -157,28 +157,82 @@ def equipment_history():
 @user_bp.route('/return_equipment/<int:equipment_id>', methods=['POST'])
 @login_required
 def return_equipment(equipment_id):
-    equipment = Equipment.query.get_or_404(equipment_id)
-    if equipment.current_holder_id != current_user.id:
-        flash('У вас нет этого оборудования', 'error')
-        return redirect(url_for('user.my_equipment'))
-    
-    equipment.current_holder_id = None
-    equipment.status = 'available'
-    
-    storage_item = Storage.query.filter_by(equipment_id=equipment_id).first()
-    if storage_item:
-        storage_item.quantity_available += 1
-    
-    db.session.commit()
-    flash('Оборудование успешно возвращено', 'success')
-    return redirect(url_for('user.my_equipment'))
+    try:
+        # Получаем количество возвращаемого оборудования из формы
+        return_quantity = int(request.form.get('quantity', 1))
+        
+        # Используем filter_by вместо get_or_404, так как у нас составной ключ
+        equipment = Equipment.query.filter_by(
+            equipment_id=equipment_id,
+            user_id=current_user.id
+        ).first_or_404()
+        
+        # Проверяем, что количество для возврата корректно
+        if return_quantity > equipment.count:
+            return jsonify({
+                'success': False,
+                'message': 'Нельзя вернуть больше оборудования, чем у вас есть'
+            }), 400
+        
+        # Получаем связанный Storage объект
+        storage_item = Storage.query.get_or_404(equipment_id)
+        
+        # Обновляем количество у пользователя
+        if equipment.count > return_quantity:
+            equipment.count -= return_quantity
+        else:
+            db.session.delete(equipment)
+        
+        # Увеличиваем количество на складе
+        storage_item.count += return_quantity
+        
+        db.session.commit()
+        
+        return jsonify({
+            'success': True,
+            'message': f'Оборудование успешно возвращено ({return_quantity} шт.)'
+        })
+        
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({
+            'success': False,
+            'message': 'Произошла ошибка при возврате оборудования'
+        }), 500
 
 # Просмотр уведомлений
 @user_bp.route('/notifications')
 @login_required
 def notifications():
-    requests = Requests.query.filter_by(user_id=current_user.id).all()
-    return render_template('notifications.html', notifications=requests)
+    if current_user.admin:
+        # Для админа показываем все необработанные заявки
+        requests = Requests.query.filter_by(status=None).order_by(Requests.created_at.desc()).all()
+        
+        # Отмечаем как просмотренные
+        for request in requests:
+            request.status_viewed = True
+        db.session.commit()
+        
+        return render_template('notifications.html', notifications=requests, admin=True)
+    else:
+        # Для пользователя показываем уведомления об одобренных или отклоненных заявках
+        requests = Requests.query.filter(
+            Requests.user_id == current_user.id,
+            Requests.status.in_([0, 1])  # 0 - отклонено, 1 - одобрено
+        ).order_by(Requests.created_at.desc()).all()
+        
+        # Отмечаем как прочитанные
+        unviewed_requests = Requests.query.filter(
+            Requests.user_id == current_user.id,
+            Requests.status_viewed == False,
+            Requests.status.in_([0, 1])
+        ).all()
+        
+        for request in unviewed_requests:
+            request.status_viewed = True
+        db.session.commit()
+        
+        return render_template('notifications.html', notifications=requests, admin=False)
 
 # Отмена заявки
 @user_bp.route('/cancel_request/<int:request_id>', methods=['POST'])
@@ -262,22 +316,27 @@ def search_equipment():
 @user_bp.route('/mark_notifications_viewed', methods=['POST'])
 @login_required
 def mark_notifications_viewed():
-    # Получаем все непросмотренные заявки пользователя
-    unviewed_requests = Requests.query.filter_by(
-        user_id=current_user.id,
-        status_viewed=False
-    ).all()
-    
-    # Отмечаем их как просмотренные
-    for request in unviewed_requests:
-        request.status_viewed = True
-    
     try:
+        if current_user.admin:
+            # Для админа отмечаем все необработанные заявки
+            unviewed_requests = Requests.query.filter_by(status=None).all()
+        else:
+            # Для пользователя отмечаем уведомления об одобренных/отклоненных заявках
+            unviewed_requests = Requests.query.filter(
+                Requests.user_id == current_user.id,
+                Requests.status_viewed == False,
+                Requests.status.in_([0, 1])
+            ).all()
+        
+        # Отмечаем их как просмотренные
+        for request in unviewed_requests:
+            request.status_viewed = True
+        
         db.session.commit()
         return jsonify({'success': True})
-    except:
+    except Exception as e:
         db.session.rollback()
-        return jsonify({'success': False}), 500
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 # Просмотр формы заявки на ремонт
 @user_bp.route('/repair_request/<int:equipment_id>', methods=['GET'])

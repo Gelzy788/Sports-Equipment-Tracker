@@ -65,6 +65,7 @@
                             </div>
                         {% else %}
                             <form method="post" action="{{ url_for('user.request_equipment', equipment_id=item.id) }}" class="request-form">
+                                <input type="hidden" name="equipment_id" value="{{ item.id }}">
                                 <div class="input-group mb-3">
                                     <button type="button" class="btn btn-outline-secondary minus-btn">-</button>
                                     <input type="number" name="quantity" class="form-control text-center quantity-input" value="1" min="1" max="{{ item.count }}">

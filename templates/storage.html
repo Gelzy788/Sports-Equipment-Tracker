@@ -27,6 +27,8 @@
                     {{ item.name }} ({{ item.count }})
                     {% if item.status == 'сломано' %}
                         [Сломано]
+                    {% elif item.status == 'ремонт' %}
+                        [На ремонте]
                     {% else %}
                         [Новое]
                     {% endif %}
@@ -78,6 +80,7 @@
                 <tr>
                     <th>Наименование</th>
                     <th>Количество</th>
+                    <th>Статус</th>
                     {% if current_user.admin %}
                     <th>Действия</th>
                     {% endif %}
@@ -88,11 +91,26 @@
                 <tr>
                     <td>{{ item.name }}</td>
                     <td>{{ item.count }}</td>
+                    <td>
+                        {% if item.status == 'ремонт' %}
+                            <span class="badge bg-warning">На ремонте</span>
+                        {% elif item.status == 'сломано' %}
+                            <span class="badge bg-danger">Сломано</span>
+                        {% else %}
+                            <span class="badge bg-success">Новое</span>
+                        {% endif %}
+                    </td>
                     {% if current_user.admin %}
                     <td>
-                        <a href="{{ url_for('edit_item', item_id=item.id) }}"
-                            class="btn btn-sm btn-primary">Редактировать</a>
-                        <button class="btn btn-sm btn-danger" onclick="deleteItem('{{ item.id }}')">Удалить</button>
+                        <div class="btn-group">
+                            <a href="{{ url_for('edit_item', item_id=item.id) }}"
+                               class="btn btn-sm btn-primary">
+                               <i class="fas fa-edit"></i> Редактировать
+                            </a>
+                            <button class="btn btn-sm btn-danger" onclick="deleteItem('{{ item.id }}')">
+                                <i class="fas fa-trash"></i> Удалить
+                            </button>
+                        </div>
                     </td>
                     {% endif %}
                 </tr>

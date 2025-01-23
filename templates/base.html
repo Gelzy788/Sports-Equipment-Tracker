@@ -44,21 +44,31 @@
                 </ul>
                 <ul class="navbar-nav">
                     {% if current_user.is_authenticated %}
+                    {% if current_user.admin %}
                     <li class="nav-item">
-                        <a class="nav-link position-relative" href="{{ url_for('view_requests') }}">
+                        <a class="nav-link position-relative" href="{{ url_for('requests') }}" onclick="markRequestsAsViewed()">
                             <i class="fas fa-file-alt"></i> Заявки
-                            {% if notification_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                {{ notification_count }}
+                            {% if request_count > 0 %}
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">
+                                {{ request_count }}
+                                <span class="visually-hidden">новых заявок</span>
                             </span>
                             {% endif %}
                         </a>
                     </li>
+                    {% else %}
                     <li class="nav-item">
-                        <a class="nav-link position-relative" href="{{ url_for('user.notifications') }}">
+                        <a class="nav-link" href="{{ url_for('requests') }}">
+                            <i class="fas fa-file-alt"></i> Мои заявки
+                        </a>
+                    </li>
+                    {% endif %}
+                    <li class="nav-item">
+                        <a class="nav-link position-relative" href="{{ url_for('user.notifications') }}" 
+                           onclick="markNotificationsAsRead()">
                             <i class="fas fa-bell"></i>
                             {% if notification_count > 0 %}
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger notification-badge">
                                 {{ notification_count }}
                                 <span class="visually-hidden">непрочитанных уведомлений</span>
                             </span>
@@ -105,6 +115,62 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Custom JS -->
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    
+    <script>
+    async function markNotificationsAsRead() {
+        try {
+            const response = await fetch("{{ url_for('user.mark_notifications_viewed') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                // Скрываем значок уведомлений только на кнопке уведомлений
+                const notificationButton = document.querySelector('a[href="{{ url_for("user.notifications") }}"]');
+                const badge = notificationButton.querySelector('.notification-badge');
+                if (badge) {
+                    badge.remove();
+                }
+            }
+        } catch (error) {
+            console.error('Error marking notifications as read:', error);
+        }
+    }
+
+    async function markRequestsAsViewed() {
+        try {
+            const response = await fetch("{{ url_for('mark_requests_viewed') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.ok) {
+                // Скрываем значок уведомлений только на кнопке заявок
+                const requestButton = document.querySelector('a[href="{{ url_for("requests") }}"]');
+                const badge = requestButton.querySelector('.notification-badge');
+                if (badge) {
+                    badge.remove();
+                }
+            }
+        } catch (error) {
+            console.error('Error marking requests as viewed:', error);
+        }
+    }
+
+    // Если мы на странице уведомлений или заявок, отмечаем их как прочитанные
+    document.addEventListener('DOMContentLoaded', function() {
+        const path = window.location.pathname;
+        if (path.endsWith("{{ url_for('user.notifications') }}")) {
+            markNotificationsAsRead();
+        } else if (path.endsWith("{{ url_for('requests') }}")) {
+            markRequestsAsViewed();
+        }
+    });
+    </script>
 </body>
 
 </html>

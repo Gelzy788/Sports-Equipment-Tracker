@@ -2,6 +2,7 @@ import os
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
+from flask_migrate import Migrate
 
 # Создаем экземпляр приложения
 app = Flask(__name__)
@@ -19,6 +20,13 @@ DB_PATH = os.path.join(basedir, 'database.db')
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + DB_PATH
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
+# Инициализируем объекты БД и менеджера авторизации
+db = SQLAlchemy(app)
+migrate = Migrate(app, db)
+login_manager = LoginManager()
+login_manager.init_app(app)
+login_manager.login_view = 'login'
+
 # Настройки для загрузки файлов
 UPLOAD_FOLDER = os.path.join(basedir, 'static', 'profile_images')
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -27,7 +35,3 @@ ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
 # Создаем папку для загрузки, если её нет
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
-
-# Инициализируем объекты БД и менеджера авторизации
-db = SQLAlchemy(app)
-login_manager = LoginManager()

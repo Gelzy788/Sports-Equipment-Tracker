@@ -2,68 +2,66 @@
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Уведомления</h2>
-
-    {% with messages = get_flashed_messages() %}
-    {% if messages %}
-    {% for message in messages %}
-    <div class="alert alert-info alert-dismissible fade show">
-        {{ message }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        {% if admin %}
+        <h2>Новые заявки</h2>
+        {% else %}
+        <h2>Уведомления</h2>
+        {% endif %}
     </div>
-    {% endfor %}
-    {% endif %}
-    {% endwith %}
 
     {% if notifications %}
     <div class="list-group">
         {% for notification in notifications %}
-        <div class="list-group-item list-group-item-action">
+        <div class="list-group-item">
             <div class="d-flex w-100 justify-content-between">
                 <h5 class="mb-1">
-                    {% if notification.request_type == 'получение' %}
-                        <i class="fas fa-hand-holding text-primary"></i>
+                    {% if admin %}
+                    Заявка от {{ notification.user.username }}
                     {% else %}
-                        <i class="fas fa-tools text-warning"></i>
+                    {% if notification.status == 1 %}
+                    <span class="text-success">✓ Заявка одобрена</span>
+                    {% else %}
+                    <span class="text-danger">✗ Заявка отклонена</span>
                     {% endif %}
-                    {% if notification.storage %}
-                        {{ notification.storage.name }}
-                    {% else %}
-                        {{ notification.equipment_name }}
                     {% endif %}
                 </h5>
-                <small class="text-muted">{{ notification.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
+                <small>{{ notification.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
             </div>
-            <p class="mb-1">
-                {% if notification.request_type == 'получение' %}
-                    Заявка на получение оборудования
-                {% else %}
-                    Заявка на ремонт/замену оборудования
-                {% endif %}
-                {% if notification.status == 1 %}
-                    <span class="badge bg-success">Одобрена</span>
-                {% elif notification.status == 0 %}
-                    <span class="badge bg-danger">Отклонена</span>
-                {% else %}
-                    <span class="badge bg-warning">Ожидает рассмотрения</span>
-                {% endif %}
-            </p>
-            {% if notification.description %}
-            <p class="mb-1">
-                <small>{{ notification.description }}</small>
-            </p>
+            
+            {% if notification.equipment_id %}
+            <p class="mb-1">Оборудование: {{ notification.storage.name }}</p>
+            <p class="mb-1">Количество: {{ notification.count }}</p>
             {% endif %}
+            
+            {% if notification.custom_description %}
+            <p class="mb-1">Описание: {{ notification.custom_description }}</p>
+            {% endif %}
+            
+            {% if admin %}
             <div class="mt-2">
-                {% if not notification.status %}
-
-                {% endif %}
+                <form action="{{ url_for('process_request', request_id=notification.id, action='approve') }}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="fas fa-check"></i> Одобрить
+                    </button>
+                </form>
+                <form action="{{ url_for('process_request', request_id=notification.id, action='reject') }}" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fas fa-times"></i> Отклонить
+                    </button>
+                </form>
             </div>
+            {% endif %}
         </div>
         {% endfor %}
     </div>
     {% else %}
     <div class="alert alert-info">
-        <i class="fas fa-bell-slash"></i> У вас нет новых уведомлений
+        {% if admin %}
+        <p class="mb-0">Нет новых заявок.</p>
+        {% else %}
+        <p class="mb-0">У вас нет новых уведомлений.</p>
+        {% endif %}
     </div>
     {% endif %}
 </div>

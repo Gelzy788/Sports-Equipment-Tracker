@@ -23,6 +23,7 @@ class Equipment(db.Model):
     user_id = db.Column(db.Integer(), db.ForeignKey(
         'users.id'), primary_key=True)
     count = db.Column(db.Integer(), default=1)
+    assigned_date = db.Column(db.DateTime, default=datetime.utcnow)
 
     __table_args__ = (db.UniqueConstraint(
         'equipment_id', 'user_id', name='uq_equipment_user'),)
@@ -35,7 +36,7 @@ class Storage(db.Model):
     id = db.Column(db.Integer(), primary_key=True, nullable=False)
     name = db.Column(db.String(64), nullable=False)
     count = db.Column(db.Integer())
-    status = db.Column(db.String(20), default='новое')  # 'новое' или 'сломано'
+    status = db.Column(db.String(20), default='новое')  # 'новое' или 'в ремонте'
 
 
 class Requests(db.Model):

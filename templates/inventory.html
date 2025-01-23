@@ -27,14 +27,14 @@
             <tbody>
                 {% for item in items %}
                 <tr>
-                    <td>{{ item.id }}</td>
+                    <td>{{ item.equipment_id }}</td>
                     <td>{{ item.name }}</td>
                     <td>{{ item.count }}</td>
                     {% if current_user.admin %}
                     <td>
-                        <a href="{{ url_for('edit_item', item_id=item.id) }}"
+                        <a href="{{ url_for('edit_item', item_id=item.equipment_id) }}"
                             class="btn btn-sm btn-primary">Редактировать</a>
-                        <button class="btn btn-sm btn-danger" onclick="deleteItem('{{ item.id }}')">Удалить</button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteItem('{{ item.equipment_id }}')">Удалить</button>
                     </td>
                     {% endif %}
                 </tr>

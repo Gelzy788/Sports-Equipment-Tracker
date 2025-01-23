@@ -33,21 +33,22 @@
             </thead>
             <tbody>
                 {% for item in equipment %}
-                <tr>
+                <tr data-equipment-id="{{ item.equipment_id }}">
                     <td>{{ item.equipment_id }}</td>
                     <td>{{ item.storage.name }}</td>
-                    <td>{{ item.count }}</td>
+                    <td class="equipment-count">{{ item.count }}</td>
                     <td>
-                        <form action="{{ url_for('user.return_equipment', equipment_id=item.equipment_id) }}" 
-                              method="post" class="d-inline">
-                            <button type="submit" class="btn btn-warning btn-sm">
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-warning btn-sm" 
+                                    data-bs-toggle="modal" data-bs-target="#returnModal"
+                                    onclick="prepareReturnModal('{{ item.equipment_id }}', '{{ item.storage.name }}', {{ item.count }})">
                                 <i class="fas fa-undo"></i> Вернуть
                             </button>
-                        </form>
-                        <a href="{{ url_for('user.repair_request', equipment_id=item.equipment_id) }}" 
-                           class="btn btn-outline-danger btn-sm">
-                            <i class="fas fa-tools"></i> Сообщить о проблеме
-                        </a>
+                            <a href="{{ url_for('user.repair_request', equipment_id=item.equipment_id) }}" 
+                               class="btn btn-outline-danger btn-sm">
+                                <i class="fas fa-tools"></i> Сообщить о проблеме
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
@@ -62,4 +63,104 @@
     </div>
     {% endif %}
 </div>
+
+<!-- Модальное окно для подтверждения возврата -->
+<div class="modal fade" id="returnModal" tabindex="-1" aria-labelledby="returnModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="returnModalLabel">Возврат оборудования</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="returnForm" onsubmit="handleReturnSubmit(event)">
+                <div class="modal-body">
+                    <p>Вы собираетесь вернуть: <span id="equipmentName"></span></p>
+                    <div class="mb-3">
+                        <label for="returnQuantity" class="form-label">Количество для возврата:</label>
+                        <input type="number" class="form-control" id="returnQuantity" name="quantity" 
+                               min="1" value="1" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-primary">Подтвердить возврат</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentEquipmentId = null;
+
+function prepareReturnModal(equipmentId, name, maxCount) {
+    currentEquipmentId = equipmentId;
+    const quantityInput = document.getElementById('returnQuantity');
+    const equipmentName = document.getElementById('equipmentName');
+    
+    equipmentName.textContent = name;
+    quantityInput.max = maxCount;
+    quantityInput.value = 1;
+}
+
+async function handleReturnSubmit(event) {
+    event.preventDefault();
+    
+    const quantity = document.getElementById('returnQuantity').value;
+    const url = "{{ url_for('user.return_equipment', equipment_id=0) }}".replace('0', currentEquipmentId);
+    
+    try {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `quantity=${quantity}`
+        });
+        
+        const result = await response.json();
+        
+        // Закрываем модальное окно
+        const modal = bootstrap.Modal.getInstance(document.getElementById('returnModal'));
+        modal.hide();
+        
+        if (result.success) {
+            // Обновляем страницу без перезагрузки
+            const row = document.querySelector(`[data-equipment-id="${currentEquipmentId}"]`);
+            const countCell = row.querySelector('.equipment-count');
+            const currentCount = parseInt(countCell.textContent);
+            const newCount = currentCount - parseInt(quantity);
+            
+            if (newCount <= 0) {
+                row.remove();
+                if (document.querySelectorAll('tbody tr').length === 0) {
+                    location.reload(); // Перезагружаем если это был последний элемент
+                }
+            } else {
+                countCell.textContent = newCount;
+            }
+            
+            // Показываем сообщение об успехе
+            const alert = document.createElement('div');
+            alert.className = 'alert alert-success alert-dismissible fade show';
+            alert.innerHTML = `
+                ${result.message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            document.querySelector('.container').insertBefore(alert, document.querySelector('.table-responsive'));
+        } else {
+            throw new Error(result.message || 'Произошла ошибка');
+        }
+    } catch (error) {
+        // Показываем сообщение об ошибке
+        const alert = document.createElement('div');
+        alert.className = 'alert alert-danger alert-dismissible fade show';
+        alert.innerHTML = `
+            ${error.message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.container').insertBefore(alert, document.querySelector('.table-responsive'));
+    }
+}
+</script>
 {% endblock %}
