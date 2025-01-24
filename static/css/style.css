@@ -3,7 +3,9 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background-color: #f8f9fa;
+    background-color: #d2691e;
+    background-repeat: repeat;
+    background-image: url("../images/background.png");
 }
 
 main {
@@ -52,8 +54,42 @@ main {
 
 /* Стили для форм */
 .form-control:focus {
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem #96989a;
+    background-color: #212529;
+    color: #96989a;
+    border-color: #96989a;
+}
+
+.form-control {
+    background-color: #212529;
+    color: #96989a;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #96989a;
+  -webkit-box-shadow: #212529 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+A {
+    color: #854213; /* Цвет ссылок */
+}
+
+
+A:visited {
+    color: #854213; /* Цвет посещенных ссылок */
+}
+
+A:active {
+    color: #854213; /* Цвет активных ссылок */
 }
 
 /* Стили для alerts */
