@@ -3,33 +3,35 @@
 {% block content %}
 <div class="container mt-4">
     <div class="row">
-        <div class="col-md-4">
-            <div class="user-profile text-center">
+        <div class="col-md-4" >
+            <div class="user-profile text-center" style="background-color: #212529; padding: 10px; border-radius: 10px;">
                 {% if current_user.profile_picture %}
                     <img src="{{ url_for('static', filename='profile_images/' + current_user.profile_picture) }}" 
                          alt="Фото профиля" 
                          class="user-profile-picture">
                 {% else %}
-                    <img src="{{ url_for('static', filename='profile_images/default.jpg') }}" 
+                    <img src="{{ url_for('static', filename='profile_images/default.png') }}"
                          alt="Фото профиля по умолчанию" 
                          class="user-profile-picture">
                 {% endif %}
-                <h3>{{ current_user.username }}</h3>
+                <h3 style="color: #96989a;">{{ current_user.username }}</h3>
+                <center>
                 <p class="text-muted">{{ current_user.email }}</p>
+                    </center>
                 {% if current_user.phone %}
                     <p><i class="fas fa-phone"></i> {{ current_user.phone }}</p>
                 {% endif %}
                 <p>
-                    <span class="badge {% if current_user.admin %}bg-primary{% else %}bg-secondary{% endif %}">
+                    <span class="badge {% if current_user.admin %}bg-primary{% else %}bg-secondary{% endif %}" style="{% if current_user.admin %}background-color: #e3a071; color: #854213;{% else %}background-color: #96989a; color: #212529;{% endif %}">
                         {% if current_user.admin %}Администратор{% else %}Пользователь{% endif %}
                     </span>
                 </p>
             </div>
         </div>
         <div class="col-md-8">
-            <div class="card">
-                <div class="card-header">
-                    <h4>Последние действия</h4>
+            <div class="card" style="background-color: #212529;">
+                <div class="card-header" style="background-color: #212529;">
+                    <h4 style="color: #96989a;">Последние действия</h4>
                 </div>
                 <div class="card-body">
                     <div class="history-timeline">

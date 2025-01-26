@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4" style="background-color: #212529; padding: 10px; border-radius: 10px;">
     <div class="row mb-4">
         <div class="col-md-6">
-            <h2>Доступное оборудование</h2>
+            <h2 style="color: #96989a;">Доступное оборудование</h2>
         </div>
         <div class="col-md-6 d-flex justify-content-end">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#customRequestModal">
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#customRequestModal" style="color: #e3a071; background-color: #854213; border: none;">
                 <i class="fas fa-plus"></i> Создать кастомный запрос
             </button>
         </div>
@@ -28,7 +28,7 @@
     <div class="row mb-4">
         <div class="col-md-6">
             <div class="input-group">
-                <input type="text" id="searchInput" class="form-control" placeholder="Поиск оборудования...">
+                <input type="text" id="searchInput" class="form-control" placeholder="Поиск инвентаря по названию">
                 <button class="btn btn-outline-secondary" type="button" id="searchButton">
                     <i class="fas fa-search"></i>
                 </button>
@@ -40,8 +40,8 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="btn-group" role="group">
-                <button type="button" class="btn btn-outline-primary active" data-filter="all">Все</button>
-                <button type="button" class="btn btn-outline-primary" data-filter="available">В наличии</button>
+                <button type="button" class="btn btn-outline-primary" data-filter="all">Все</button>
+                <button type="button" class="btn btn-outline-primary active" data-filter="available">В наличии</button>
             </div>
         </div>
     </div>
@@ -51,10 +51,10 @@
         <div class="col-md-4 mb-4 equipment-item" 
              data-name="{{ item.name|lower }}" 
              data-available="{{ item.count > 0 }}">
-            <div class="card h-100">
-                <div class="card-body">
-                    <h5 class="card-title">{{ item.name }}</h5>
-                    <p class="card-text">{{ item.description }}</p>
+            <div class="card h-100" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
+                <div class="card-body" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
+                    <h5 class="card-title" style="color: #96989a;">{{ item.name }}</h5>
+                    <p class="card-text" style="color: #96989a;">{{ item.description }}</p>
                     <p class="card-text">
                         <small class="text-muted">Доступно: {{ item.count }}</small>
                     </p>
@@ -71,7 +71,7 @@
                                     <input type="number" name="quantity" class="form-control text-center quantity-input" value="1" min="1" max="{{ item.count }}">
                                     <button type="button" class="btn btn-outline-secondary plus-btn">+</button>
                                 </div>
-                                <button type="submit" class="btn btn-primary w-100">Запросить</button>
+                                <button type="submit" class="btn btn-primary w-100" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Запросить</button>
                             </form>
                         {% endif %}
                     {% else %}
@@ -89,35 +89,35 @@
 <!-- Модальное окно для кастомного запроса -->
 <div class="modal fade" id="customRequestModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Создать кастомный запрос</h5>
+        <div class="modal-content" style="background-color: #212529;">
+            <div class="modal-header" style="background-color: #212529; padding: 10px; border-radius: 10px;">
+                <h5 class="modal-title" style="color: #96989a;">Создать кастомный запрос</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
+            <div class="modal-body" style="background-color: #212529; padding: 10px; border-radius: 10px;">
                 <form id="customRequestForm" method="post" action="{{ url_for('user.create_custom_request') }}">
                     <div class="mb-3">
-                        <label for="equipmentName" class="form-label">Название оборудования</label>
+                        <label for="equipmentName" class="form-label" style="color: #96989a;">Название инвентаря</label>
                         <input type="text" class="form-control" id="equipmentName" name="equipment_name" required>
                         <div id="equipmentSuggestions" class="list-group mt-2"></div>
                     </div>
                     <div class="mb-3">
-                        <label for="customDescription" class="form-label">Описание запроса</label>
+                        <label for="customDescription" class="form-label" style="color: #96989a;">Описание запроса</label>
                         <textarea class="form-control" id="customDescription" name="custom_description" rows="3" required 
-                                placeholder="Опишите, что вам нужно. Например: нужен футбольный мяч для тренировки на следующей неделе"></textarea>
+                                placeholder="Опишите, зачем вы запрашиваете инвентарь. Например: нужен футбольный мяч для тренировки на следующей неделе"></textarea>
                     </div>
                     <div class="mb-3">
-                        <label for="requestType" class="form-label">Тип запроса</label>
+                        <label for="requestType" class="form-label" style="color: #96989a;">Тип запроса</label>
                         <select class="form-control" id="requestType" name="request_type" required>
-                            <option value="получение">Получение оборудования</option>
-                            <option value="ремонт">Ремонт</option>
+                            <option value="получение" style="color: #96989a;">Получение инвентаря</option>
+                            <option value="ремонт" style="color: #96989a;">Ремонт</option>
                         </select>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                <button type="submit" form="customRequestForm" class="btn btn-primary">Отправить запрос</button>
+            <div class="modal-footer" style="background-color: #212529; padding: 10px; border-radius: 10px;">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Отмена</button>
+                <button type="submit" form="customRequestForm" class="btn btn-primary" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Отправить запрос</button>
             </div>
         </div>
     </div>
@@ -172,14 +172,14 @@ document.addEventListener('DOMContentLoaded', function() {
         const minusBtn = form.querySelector('.minus-btn');
         const plusBtn = form.querySelector('.plus-btn');
         const input = form.querySelector('.quantity-input');
-        
+
         minusBtn.addEventListener('click', () => {
             const currentValue = parseInt(input.value);
             if (currentValue > parseInt(input.min)) {
                 input.value = currentValue - 1;
             }
         });
-        
+
         plusBtn.addEventListener('click', () => {
             const currentValue = parseInt(input.value);
             if (currentValue < parseInt(input.max)) {

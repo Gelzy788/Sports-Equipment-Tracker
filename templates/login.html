@@ -5,27 +5,26 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card">
-                <div class="card-header">
-                    <h2 class="text-center">Вход в систему</h2>
+                <div class="card-header" style="background-color: #212529;">
+                    <h2 class="text-center" style="color: #96989a;">Вход</h2>
                 </div>
-                <div class="card-body">
-
+                <div class="card-body" style="background-color: #212529;">
 
                     <form method="POST">
-                        <div class="mb-3">
-                            <label for="email" class="form-label">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" required>
+                        <div class="mb-3" style="background-color: #212529;">
+                            <label for="email" class="form-label" style="color: #96989a;">Ваш почтовый адрес</label>
+                            <input type="text" class="form-control" id="email" name="email" required>
                         </div>
-                        <div class="mb-3">
-                            <label for="password" class="form-label">Пароль</label>
+                        <div class="mb-3" style="background-color: #212529;">
+                            <label for="password" class="form-label" style="color: #96989a;">Пароль</label>
                             <input type="password" class="form-control" id="password" name="password" required>
                         </div>
-                        <div class="d-grid">
-                            <button type="submit" class="btn btn-primary">Войти</button>
+                        <div class="d-grid" style="background-color: #212529;">
+                            <button type="submit" class="btn btn-primary" style="background-color: #e3a071; color: #854213; border-color: #96989a;"><b>Войти</b></button>
                         </div>
                     </form>
 
-                    <div class="text-center mt-3">
+                    <div class="text-center mt-3" style="color: #96989a;">
                         <p>Нет аккаунта? <a href="{{ url_for('registration') }}">Зарегистрироваться</a></p>
                     </div>
                 </div>

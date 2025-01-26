@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Планирование закупок</h2>
+<div class="container mt-4" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
+    <h2 style="color: #96989a;">Планирование закупок</h2>
 
     {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -36,11 +36,11 @@
                 </select>
             </div>
         </div>
-        <button type="submit" class="btn btn-primary mt-3">Добавить план</button>
+        <button type="submit" class="btn btn-primary mt-3" style="background-color: #e3a071; color: #854213; border-color: #96989a;"> Добавить план</button>
     </form>
 
     <div class="mb-3">
-        <strong>Общая сумма всех закупок: </strong>
+        <strong style="color: #96989a;">Общая сумма всех закупок: </strong>
         {{ purchases|sum(attribute='total_price') }} руб.
     </div>
 

@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Пользователи</h2>
+<div class="container mt-4" style="padding: 20px; background-color: #212529; border-radius: 10px;">
+    <h2 style="color: #96989a;">Пользователи</h2>
 
     {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -12,25 +12,25 @@
     {% endif %}
     {% endwith %}
 
-    <div class="card">
-        <div class="card-body">
+    <div class="card" style="background-color: #96989a; border-radius: 10px;">
+        <div class="card-body" style="background-color: #96989a; border-radius: 10px;">
             <div class="table-responsive">
                 <table class="table table-striped table-hover">
                     <thead class="thead-dark">
                         <tr>
-                            <th>Имя пользователя</th>
-                            <th>Email</th>
-                            <th>Статус</th>
-                            <th>Действия</th>
+                            <th style="color: #854213">Имя пользователя</th>
+                            <th style="color: #854213;">Email</th>
+                            <th style="color: #854213;">Статус</th>
+                            <th style="color: #854213;">Действия</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for user in users %}
                         <tr>
                             <td><a href="{{ url_for('user_profile', user_id=user.id) }}">{{ user.username }}</a></td>
-                            <td>{{ user.email }}</td>
-                            <td>{{ 'Администратор' if user.admin else 'Обычный пользователь' }}</td>
-                            <td>
+                            <td style="color: #854213;">{{ user.email }}</td>
+                            <td style="color: #854213;">{{ 'Администратор' if user.admin else 'Пользователь' }}</td>
+                            <td style="color: #854213;">
                                 {% if user.id != current_user.id %}
                                 <button class="btn btn-sm btn-warning" onclick="toggleAdmin('{{ user.id }}')">
                                     {{ 'Снять права' if user.admin else 'Предоставить права' }}

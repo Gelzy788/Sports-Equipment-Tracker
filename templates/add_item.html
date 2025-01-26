@@ -1,20 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Добавить новый предмет</h2>
+<div class="container mt-4" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
+    <h2 style="color: #96989a;">Добавить новый предмет</h2>
 
     <form method="POST">
         <div class="form-group">
-            <label for="name">Наименование</label>
+            <label for="name" style="color: #96989a;">Наименование</label>
             <input type="text" class="form-control" id="name" name="name" required>
         </div>
         <div class="form-group">
-            <label for="count">Количество</label>
+            <label for="count" style="color: #96989a;">Количество</label>
             <input type="number" class="form-control" id="count" name="count" required min="0">
         </div>
-        <button type="submit" class="btn btn-primary">Добавить</button>
-        <a href="{{ url_for('storage') }}" class="btn btn-secondary">Отмена</a>
+        <br>
+        <button type="submit" class="btn btn-primary" >Добавить</button>
+        <a href="{{ url_for('storage') }}" class="btn btn-secondary" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Отмена</a>
     </form>
 </div>
 {% endblock %}

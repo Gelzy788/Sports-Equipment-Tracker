@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4" style="background-color: #212529; padding: 10px; border-radius: 10px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2>Мой инвентарь</h2>
-        <a href="{{ url_for('user.available_equipment') }}" class="btn btn-primary">
+        <h2 style="color: #96989a;">Мой инвентарь</h2>
+        <a href="{{ url_for('user.available_equipment') }}" class="btn btn-primary" style="background-color: #e3a071; color: #854213; border: None;">
             <i class="fas fa-search"></i> Посмотреть доступное оборудование
         </a>
     </div>
@@ -57,33 +57,31 @@
     </div>
     {% else %}
     <div class="alert alert-info">
-        <p class="mb-0">У вас нет выданного инвентаря. 
-            <a href="{{ url_for('user.available_equipment') }}" class="alert-link">Посмотрите доступное оборудование</a>
-        </p>
+        <p class="mb-0">У вас нет выданного инвентаря. Можете посмотреть доступный инвентарь по кнопке сверху.</p>
     </div>
     {% endif %}
 </div>
 
 <!-- Модальное окно для подтверждения возврата -->
 <div class="modal fade" id="returnModal" tabindex="-1" aria-labelledby="returnModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="returnModalLabel">Возврат оборудования</h5>
+    <div class="modal-dialog" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
+        <div class="modal-content" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
+            <div class="modal-header" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
+                <h5 class="modal-title" id="returnModalLabel" style="color: #96989a;">Возврат спортивного инвентаря</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="returnForm" onsubmit="handleReturnSubmit(event)">
                 <div class="modal-body">
-                    <p>Вы собираетесь вернуть: <span id="equipmentName"></span></p>
+                    <p style="color: #96989a;">Вы собираетесь вернуть: <span id="equipmentName"></span></p>
                     <div class="mb-3">
-                        <label for="returnQuantity" class="form-label">Количество для возврата:</label>
+                        <label for="returnQuantity" class="form-label" style="color: #96989a;">Количество возвращаемого инвентаря:</label>
                         <input type="number" class="form-control" id="returnQuantity" name="quantity" 
                                min="1" value="1" required>
                     </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
-                    <button type="submit" class="btn btn-primary">Подтвердить возврат</button>
+                    <button type="submit" class="btn btn-primary" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Подтвердить возврат</button>
                 </div>
             </form>
         </div>

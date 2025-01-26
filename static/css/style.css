@@ -3,7 +3,9 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    background-color: #f8f9fa;
+    background-color: #d2691e;
+    background-repeat: repeat;
+    background-image: url("../images/background.png");
 }
 
 main {
@@ -52,8 +54,10 @@ main {
 
 /* Стили для форм */
 .form-control:focus {
-    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-    border-color: #80bdff;
+    box-shadow: 0 0 0 0.2rem #96989a;
+    background-color: #212529;
+    color: #96989a;
+    border-color: #96989a;
 }
 
 /* Стили для alerts */
@@ -62,6 +66,40 @@ main {
     border: none;
     border-radius: 0.25rem;
 }
+
+.form-control {
+    background-color: #212529;
+    color: #96989a;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: #96989a;
+  -webkit-box-shadow: #212529 inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+A {
+    color: #854213; /* Цвет ссылок */
+}
+
+
+A:visited {
+    color: #854213; /* Цвет посещенных ссылок */
+}
+
+A:active {
+    color: #854213; /* Цвет активных ссылок */
+}
+
+/
 
 /* Стили для пользовательского интерфейса */
 .user-profile {
@@ -103,6 +141,32 @@ main {
     color: #155724;
 }
 
+.bg-primary {
+    --bs-bg-opacity: 1;
+    background-color: #e3a071 !important;
+}
+
+.btn:hover {
+    color: #ffffff;
+}
+
+
+
+.table>:not(caption)>*>* {
+    padding: .5rem .5rem;
+    background-color: #e3a071;
+    border-bottom-width: 1px;
+    box-shadow: inset 0 0 0 9999px var(--bs-table-accent-bg);
+}
+
+.btn-warning,
+ .btn-warning:hover,
+ .alert-info{
+    color: #e3a071;
+    background-color: #854213;
+    border-color: #854213;
+}
+
 .request-status.rejected {
     background-color: #f8d7da;
     color: #721c24;
@@ -122,6 +186,18 @@ main {
     border-radius: 50%;
     padding: 0.25rem 0.5rem;
     font-size: 0.75rem;
+}
+
+.btn-outline-primary.active {
+    color: #e3a071;
+    background-color: #854213;
+    border-color: #854213;
+    box-shadow: none;
+}
+
+.btn-outline-primary {
+    color: #854213;
+    border-color: #854213;
 }
 
 .history-timeline {
@@ -166,4 +242,9 @@ main {
         width: 100px;
         height: 100px;
     }
+}
+
+.bg-info {
+    --bs-bg-opacity: 1;
+    background-color: #854213;
 }

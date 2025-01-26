@@ -1,21 +1,21 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container mt-4" style="padding: 20px; background-color: #212529; border-radius: 10px;">
     <div class="d-flex justify-content-between align-items-center mb-4">
         {% if admin %}
-        <h2>Новые заявки</h2>
+        <h2 style="color: #96989a;">Новые заявки</h2>
         {% else %}
-        <h2>Уведомления</h2>
+        <h2 style="color: #96989a;">Уведомления</h2>
         {% endif %}
     </div>
 
     {% if notifications %}
     <div class="list-group">
         {% for notification in notifications %}
-        <div class="list-group-item">
+        <div class="list-group-item" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
             <div class="d-flex w-100 justify-content-between">
-                <h5 class="mb-1">
+                <h5 class="mb-1" style="{% if admin %}color: #96989a;{% else %}{% endif %}">
                     {% if admin %}
                     Заявка от {{ notification.user.username }}
                     {% else %}
@@ -30,16 +30,16 @@
             </div>
             
             {% if notification.equipment_id %}
-            <p class="mb-1">Оборудование: {{ notification.storage.name }}</p>
-            <p class="mb-1">Количество: {{ notification.count }}</p>
+            <p class="mb-1" style="color: #96989a;">Оборудование: {{ notification.storage.name }}</p>
+            <p class="mb-1" style="color: #96989a;">Количество: {{ notification.count }}</p>
             {% endif %}
             
             {% if notification.custom_description %}
-            <p class="mb-1">Описание: {{ notification.custom_description }}</p>
+            <p class="mb-1" style="color: #96989a;">Описание: {{ notification.custom_description }}</p>
             {% endif %}
             
             {% if admin %}
-            <div class="mt-2">
+            <div class="mt-2" >
                 <form action="{{ url_for('process_request', request_id=notification.id, action='approve') }}" method="post" class="d-inline">
                     <button type="submit" class="btn btn-success btn-sm">
                         <i class="fas fa-check"></i> Одобрить
@@ -53,6 +53,7 @@
             </div>
             {% endif %}
         </div>
+        <br>
         {% endfor %}
     </div>
     {% else %}

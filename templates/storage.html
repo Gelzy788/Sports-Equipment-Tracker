@@ -1,8 +1,8 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Склад</h2>
+<div class="container mt-4" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
+    <h2 style="color: #96989a;">Склад</h2>
 
     {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -15,15 +15,15 @@
     {% endif %}
     {% endwith %}
 
-    <button id="toggleMode" class="btn btn-primary mb-3" onclick="toggleMode()">Переключить на сбор инвентаря</button>
+    <button id="toggleMode" class="btn btn-primary mb-3" onclick="toggleMode()" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Переключить на сбор инвентаря</button>
 
     <div id="giveInventory" class="mode">
-        <h3 class="mt-4">Выдать инвентарь пользователю</h3>
+        <h3 class="mt-4" style="color: #96989a;">Выдать инвентарь пользователю</h3>
         <form method="POST">
             <input type="hidden" name="action" value="give">
-            <select name="storage_id" required>
+            <select name="storage_id" required style="color: #96989a; background-color: #212529;">
                 {% for item in items %}
-                <option value="{{ item.id }}">
+                <option value="{{ item.id }}" style="color: #96989a; background-color: #212529;">
                     {{ item.name }} ({{ item.count }})
                     {% if item.status == 'сломано' %}
                         [Сломано]
@@ -36,44 +36,44 @@
                 {% endfor %}
             </select>
 
-            <select name="user_id" required>
+            <select name="user_id" required style="color: #96989a; background-color: #212529;">
                 {% for user in users %}
-                <option value="{{ user.id }}">{{ user.username }}</option>
+                <option value="{{ user.id }}" style="color: #96989a; background-color: #212529;">{{ user.username }}</option>
                 {% endfor %}
             </select>
 
-            <input type="number" name="quantity" min="1" placeholder="Количество" required>
+            <input type="number" name="quantity" min="1" placeholder="Количество" required style="color: #96989a; background-color: #212529;">
 
-            <button type="submit">Выдать</button>
+            <button type="submit" style="color: #96989a; background-color: #212529;">Выдать</button>
         </form>
     </div>
 
     <div id="takeBackInventory" class="mode" style="display: none;">
-        <h3 class="mt-4">Забрать инвентарь у пользователя</h3>
+        <h3 class="mt-4" style="color: #96989a;">Забрать инвентарь у пользователя</h3>
         <form method="POST">
             <input type="hidden" name="action" value="take_back">
-            <select name="user_id" id="userSelect" onchange="showUserInventory(this.value)" required>
+            <select name="user_id" id="userSelect" onchange="showUserInventory(this.value)" required style="color: #96989a; background-color: #212529;">
                 {% for user in users %}
-                <option value="{{ user.id }}">{{ user.username }}</option>
+                <option value="{{ user.id }}" style="color: #96989a; background-color: #212529;">{{ user.username }}</option>
                 {% endfor %}
             </select>
 
-            <select name="equipment_id" required>
+            <select name="equipment_id" required style="color: #96989a; background-color: #212529;">
                 {% for item in items %}
-                <option value="{{ item.id }}">{{ item.name }}</option>
+                <option value="{{ item.id }}" style="color: #96989a; background-color: #212529;">{{ item.name }}</option>
                 {% endfor %}
             </select>
 
-            <input type="number" name="quantity" min="1" placeholder="Количество" required>
+            <input type="number" name="quantity" min="1" placeholder="Количество" required style="color: #96989a; background-color: #212529;">
 
-            <button type="submit">Забрать</button>
+            <button type="submit" style="color: #96989a; background-color: #212529;">Забрать</button>
         </form>
 
-        <h4 class="mt-4">Инвентарь выбранного пользователя</h4>
+        <h4 class="mt-4" style="color: #96989a;">Инвентарь выбранного пользователя</h4>
         <div id="userInventory"></div>
     </div>
 
-    <h3 class="mt-4">Инвентарь на складе</h3>
+    <h3 class="mt-4" style="color: #96989a;">Инвентарь на складе</h3>
     <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead class="thead-dark">
@@ -121,7 +121,7 @@
 
     {% if current_user.admin %}
     <div class="mt-3">
-        <a href="{{ url_for('add_item') }}" class="btn btn-success">Добавить новый предмет</a>
+        <a href="{{ url_for('add_item') }}" class="btn btn-success" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Добавить новый предмет</a>
     </div>
     {% endif %}
 </div>

@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4">
-    <h2>Редактировать предмет</h2>
+<div class="container mt-4" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
+    <h2 style="color: #96989a;">Редактировать предмет</h2>
 
     <form method="POST">
         <div class="form-group mb-3">
-            <label for="name">Наименование</label>
+            <label for="name" style="color: #96989a;">Наименование</label>
             <input type="text" class="form-control" id="name" name="name" value="{{ item.name }}" required>
         </div>
         <div class="form-group mb-3">
-            <label for="count">Количество</label>
+            <label for="count" style="color: #96989a;">Количество</label>
             <input type="number" class="form-control" id="count" name="count" value="{{ item.count }}" required min="0">
         </div>
         <div class="form-group mb-3">
-            <label for="status">Статус</label>
+            <label for="status" style="color: #96989a;">Статус</label>
             <select class="form-control" id="status" name="status">
                 <option value="новое" {% if item.status == 'новое' or not item.status %}selected{% endif %}>Новое</option>
                 <option value="ремонт" {% if item.status == 'ремонт' %}selected{% endif %}>На ремонте</option>
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">Сохранить</button>
-        <a href="{{ url_for('storage') }}" class="btn btn-secondary">Отмена</a>
+        <button type="submit" class="btn btn-primary" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Сохранить</button>
+        <a href="{{ url_for('storage') }}" class="btn btn-secondary" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Отмена</a>
     </form>
 </div>
 {% endblock %}
