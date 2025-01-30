@@ -1,4 +1,4 @@
-from flask import Flask, render_template, flash, request, redirect, url_for, jsonify
+from flask import Flask, render_template, flash, request, redirect, url_for, jsonify, send_file
 from flask_login import login_required, login_user, logout_user, current_user
 from models import *
 from config import app, login_manager, ALLOWED_EXTENSIONS
@@ -8,6 +8,8 @@ from werkzeug.utils import secure_filename
 from user_app import user_bp
 import os
 from datetime import datetime
+from openpyxl import Workbook
+from io import BytesIO
 
 # Проверяем наличие файла базы данных
 if not os.path.exists('database.db'):
@@ -15,7 +17,7 @@ if not os.path.exists('database.db'):
     from database import init_database
     init_database()
     print("База данных успешно создана!")
-    
+
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
@@ -23,12 +25,14 @@ login_manager.login_view = 'login'
 app.register_blueprint(user_bp, url_prefix='/user')
 
 # Добавляем глобальную переменную для уведомлений
+
+
 @app.context_processor
 def utility_processor():
     def get_notification_count():
         if not current_user.is_authenticated:
             return 0
-            
+
         if current_user.admin:
             # Для админа - количество новых заявок
             return Requests.query.filter_by(status=None).count()
@@ -39,17 +43,18 @@ def utility_processor():
                 Requests.status_viewed == False,
                 Requests.status.in_([0, 1])  # 0 - отклонено, 1 - одобрено
             ).count()
-        
+
     def get_request_count():
         if current_user.is_authenticated and current_user.admin:
             # Для админа - количество необработанных заявок
             return Requests.query.filter_by(status=None, status_viewed=False).count()
         return 0
-        
+
     return dict(
         notification_count=get_notification_count(),
         request_count=get_request_count()
     )
+
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -259,21 +264,22 @@ def edit_item(item_id):
     if not current_user.admin:
         flash('У вас нет доступа к этой функции', 'danger')
         return redirect(url_for('storage'))
-        
+
     item = Storage.query.get_or_404(item_id)
-    
+
     if request.method == 'POST':
         new_name = request.form.get('name')
         new_count = int(request.form.get('count'))
         new_status = request.form.get('status')
-        
+
         # Если статус изменился, ищем другие предметы с таким же именем и новым статусом
         if new_status != item.status:
             same_item = Storage.query.filter_by(
-                name=new_name.replace(' (ремонт)', ''),  # Убираем "(ремонт)" из имени при поиске
+                # Убираем "(ремонт)" из имени при поиске
+                name=new_name.replace(' (ремонт)', ''),
                 status=new_status
             ).first()
-            
+
             if same_item and same_item.id != item.id:
                 # Объединяем с существующим предметом
                 same_item.count += new_count
@@ -281,25 +287,27 @@ def edit_item(item_id):
                 flash('Предмет объединен с существующим', 'success')
             else:
                 # Обновляем текущий предмет
-                item.name = new_name.replace(' (ремонт)', '')  # Убираем "(ремонт)" из имени
+                # Убираем "(ремонт)" из имени
+                item.name = new_name.replace(' (ремонт)', '')
                 item.count = new_count
                 item.status = new_status
                 flash('Предмет успешно обновлен', 'success')
         else:
             # Просто обновляем данные
-            item.name = new_name.replace(' (ремонт)', '')  # Убираем "(ремонт)" из имени
+            # Убираем "(ремонт)" из имени
+            item.name = new_name.replace(' (ремонт)', '')
             item.count = new_count
             item.status = new_status
             flash('Предмет успешно обновлен', 'success')
-            
+
         try:
             db.session.commit()
         except Exception as e:
             db.session.rollback()
             flash(f'Ошибка при обновлении предмета: {str(e)}', 'danger')
-            
+
         return redirect(url_for('storage'))
-        
+
     return render_template('edit_item.html', item=item)
 
 
@@ -474,7 +482,8 @@ def requests():
         return render_template('admin_requests.html', requests=requests)
     else:
         # Для обычного пользователя показываем только его заявки
-        user_requests = Requests.query.filter_by(user_id=current_user.id).order_by(Requests.created_at.desc()).all()
+        user_requests = Requests.query.filter_by(
+            user_id=current_user.id).order_by(Requests.created_at.desc()).all()
         return render_template('my_requests.html', requests=user_requests)
 
 
@@ -482,34 +491,31 @@ def requests():
 @app.route("/admin/request/<int:request_id>/<action>", methods=['POST'])
 @login_required
 def process_request(request_id, action):
-    if not current_user.admin:
-        flash('У вас нет доступа к этой функции', 'danger')
-        return redirect(url_for('requests'))
-    
-    request = Requests.query.get_or_404(request_id)
-    
     try:
+        request = Requests.query.get_or_404(request_id)
+
         if action == 'approve':
             if request.equipment_id:  # Для обычных заявок
                 storage_item = Storage.query.get(request.equipment_id)
+
                 if not storage_item:
-                    flash('Оборудование не найдено', 'danger')
+                    flash('Ошибка: предмет не найден на складе', 'danger')
                     return redirect(url_for('requests'))
-                
+
                 if request.request_type == 'ремонт':
                     # Находим оборудование пользователя
                     user_equipment = Equipment.query.filter_by(
                         user_id=request.user_id,
                         equipment_id=request.equipment_id
                     ).first()
-                    
+
                     if user_equipment:
                         # Перемещаем оборудование на склад со статусом "ремонт"
                         broken_storage = Storage.query.filter_by(
                             name=storage_item.name,
                             status='ремонт'
                         ).first()
-                        
+
                         if broken_storage:
                             # Если уже есть оборудование в ремонте этого типа
                             broken_storage.count += request.count
@@ -521,39 +527,41 @@ def process_request(request_id, action):
                                 status='ремонт'
                             )
                             db.session.add(broken_storage)
-                        
+
                         # Удаляем оборудование у пользователя
                         if user_equipment.count > request.count:
                             user_equipment.count -= request.count
                         else:
                             db.session.delete(user_equipment)
-                    
+
                     request.status = True
                     request.status_viewed = False
                     request.status_changed_at = datetime.utcnow()
-                    flash('Заявка на ремонт одобрена, оборудование перемещено на склад для ремонта', 'success')
+                    flash(
+                        'Заявка на ремонт одобрена, оборудование перемещено на склад для ремонта', 'success')
                 else:
                     # Проверяем все активные заявки на это оборудование
                     active_requests = Requests.query.filter_by(
                         equipment_id=request.equipment_id,
                         status=None
                     ).order_by(Requests.created_at).all()
-                    
+
                     # Считаем общее количество запрошенного оборудования в активных заявках
-                    total_requested = sum(r.count for r in active_requests if r.id <= request.id)
-                    
+                    total_requested = sum(
+                        r.count for r in active_requests if r.id <= request.id)
+
                     if storage_item.count >= total_requested:
                         request.status = True
                         request.status_viewed = False
                         request.status_changed_at = datetime.utcnow()
                         storage_item.count -= request.count
-                        
+
                         # Проверяем, есть ли уже такое оборудование у пользователя
                         user_equipment = Equipment.query.filter_by(
                             user_id=request.user_id,
                             equipment_id=request.equipment_id
                         ).first()
-                        
+
                         if user_equipment:
                             # Если есть - увеличиваем количество
                             user_equipment.count += request.count
@@ -565,49 +573,58 @@ def process_request(request_id, action):
                                 count=request.count
                             )
                             db.session.add(new_equipment)
-                        
+
                         flash('Заявка одобрена', 'success')
                     else:
-                        flash('Недостаточно оборудования на складе с учетом всех активных заявок', 'danger')
+                        flash(
+                            'Недостаточно оборудования на складе с учетом всех активных заявок', 'danger')
                         return redirect(url_for('requests'))
             else:  # Для кастомных заявок
+                # Проверяем, существует ли уже такой предмет на складе
+                existing_item = Storage.query.filter_by(
+                    name=request.equipment_name).first()
+
+                if not existing_item:
+                    flash(
+                        'Ошибка: Нельзя одобрить кастомную заявку. Сначала добавьте предмет на склад.', 'danger')
+                    return redirect(url_for('requests'))
+
+                if existing_item.count < (request.count or 1):
+                    flash('Ошибка: Недостаточно предметов на складе', 'danger')
+                    return redirect(url_for('requests'))
+
                 try:
-                    # Создаем новое оборудование на складе
-                    new_storage_item = Storage(
-                        name=request.equipment_name,
-                        count=1  # Начальное количество
-                    )
-                    db.session.add(new_storage_item)
-                    db.session.flush()  # Чтобы получить id нового storage item
-                    
-                    # Обновляем заявку с id нового оборудования
-                    request.equipment_id = new_storage_item.id
+                    # Обновляем заявку с id существующего предмета
+                    request.equipment_id = existing_item.id
                     request.status = True
                     request.status_viewed = False
                     request.status_changed_at = datetime.utcnow()
-                    
+
+                    # Уменьшаем количество на складе
+                    existing_item.count -= (request.count or 1)
+
                     # Создаем запись о выдаче оборудования пользователю
                     new_equipment = Equipment(
                         user_id=request.user_id,
-                        equipment_id=new_storage_item.id,
+                        equipment_id=existing_item.id,
                         count=request.count or 1
                     )
                     db.session.add(new_equipment)
                     flash('Кастомная заявка одобрена', 'success')
                 except Exception as e:
-                    print(f"Ошибка при создании оборудования: {str(e)}")
-                    flash('Ошибка при создании оборудования', 'danger')
+                    print(f"Ошибка при обработке кастомной заявки: {str(e)}")
+                    flash('Ошибка при обработке кастомной заявки', 'danger')
                     return redirect(url_for('requests'))
-                
+
         elif action == 'reject':
             request.status = False
             request.status_viewed = False
             request.status_changed_at = datetime.utcnow()
             flash('Заявка отклонена', 'danger')
-        
+
         db.session.commit()
         return redirect(url_for('requests'))
-    
+
     except Exception as e:
         db.session.rollback()
         flash(f'Произошла ошибка при обработке заявки: {str(e)}', 'danger')
@@ -620,7 +637,7 @@ def search_equipment():
     term = request.args.get('term', '')
     if len(term) < 2:
         return jsonify([])
-    
+
     # Поиск оборудования по названию
     equipment = Storage.query.filter(Storage.name.ilike(f'%{term}%')).all()
     return jsonify([{
@@ -629,16 +646,17 @@ def search_equipment():
         'description': item.description
     } for item in equipment])
 
+
 @app.route('/create_custom_request', methods=['POST'])
 @login_required
 def create_custom_request():
     equipment_name = request.form.get('equipment_name')
     custom_description = request.form.get('custom_description')
     request_type = request.form.get('request_type')
-    
+
     # Поиск оборудования по названию
     equipment = Storage.query.filter(Storage.name == equipment_name).first()
-    
+
     # Создаем новый запрос
     new_request = Requests(
         user_id=current_user.id,
@@ -646,32 +664,90 @@ def create_custom_request():
         request_type=request_type,
         custom_description=custom_description
     )
-    
+
     db.session.add(new_request)
     db.session.commit()
-    
+
     flash('Ваш запрос успешно создан и отправлен на рассмотрение', 'success')
     return redirect(url_for('requests'))
+
 
 @app.route('/mark_requests_viewed', methods=['POST'])
 @login_required
 def mark_requests_viewed():
     if not current_user.admin:
         return jsonify({'success': False, 'error': 'Unauthorized'}), 403
-        
+
     try:
         # Получаем все необработанные заявки
         unprocessed_requests = Requests.query.filter_by(status=None).all()
-        
+
         # Отмечаем их как просмотренные
         for request in unprocessed_requests:
             request.status_viewed = True
-        
+
         db.session.commit()
         return jsonify({'success': True})
     except Exception as e:
         db.session.rollback()
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route("/export_inventory")
+@login_required
+def export_inventory():
+    if not current_user.admin:
+        flash('Доступ запрещен')
+        return redirect(url_for('storage'))
+
+    # Создаем новую книгу Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Инвентарь"
+
+    # Добавляем заголовки
+    headers = ['Имя пользователя', 'Предмет', 'Количество', 'Статус']
+    for col, header in enumerate(headers, 1):
+        ws.cell(row=1, column=col, value=header)
+
+    # Получаем данные
+    row = 2
+    users = User.query.all()
+    for user in users:
+        equipment = Equipment.query.filter_by(user_id=user.id).all()
+        for item in equipment:
+            storage_item = Storage.query.get(item.equipment_id)
+            ws.cell(row=row, column=1, value=user.username)
+            ws.cell(row=row, column=2, value=storage_item.name)
+            ws.cell(row=row, column=3, value=item.count)
+            ws.cell(row=row, column=4, value=storage_item.status)
+            row += 1
+
+    # Настраиваем ширину столбцов
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # Сохраняем в BytesIO объект
+    excel_file = BytesIO()
+    wb.save(excel_file)
+    excel_file.seek(0)
+
+    return send_file(
+        excel_file,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        as_attachment=True,
+        download_name='inventory_report.xlsx'
+    )
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

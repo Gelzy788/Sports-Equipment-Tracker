@@ -1,8 +1,15 @@
 {% extends "base.html" %}
 
 {% block content %}
-<div class="container mt-4" style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
-    <h2 style="color: #96989a;">Склад</h2>
+<div class="container mt-4"
+    style="background-color: #212529; padding: 10px; border-radius: 10px; border: solid; border-color: #96989a;">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 style="color: #96989a;">Склад</h2>
+        <a href="{{ url_for('export_inventory') }}" class="btn btn-success"
+            style="background-color: #e3a071; color: #854213; border-color: #96989a;">
+            <i class="fas fa-file-excel"></i> Экспорт в Excel
+        </a>
+    </div>
 
     {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -15,7 +22,8 @@
     {% endif %}
     {% endwith %}
 
-    <button id="toggleMode" class="btn btn-primary mb-3" onclick="toggleMode()" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Переключить на сбор инвентаря</button>
+    <button id="toggleMode" class="btn btn-primary mb-3" onclick="toggleMode()"
+        style="background-color: #e3a071; color: #854213; border-color: #96989a;">Переключить на сбор инвентаря</button>
 
     <div id="giveInventory" class="mode">
         <h3 class="mt-4" style="color: #96989a;">Выдать инвентарь пользователю</h3>
@@ -26,11 +34,11 @@
                 <option value="{{ item.id }}" style="color: #96989a; background-color: #212529;">
                     {{ item.name }} ({{ item.count }})
                     {% if item.status == 'сломано' %}
-                        [Сломано]
+                    [Сломано]
                     {% elif item.status == 'ремонт' %}
-                        [На ремонте]
+                    [На ремонте]
                     {% else %}
-                        [Новое]
+                    [Новое]
                     {% endif %}
                 </option>
                 {% endfor %}
@@ -38,11 +46,13 @@
 
             <select name="user_id" required style="color: #96989a; background-color: #212529;">
                 {% for user in users %}
-                <option value="{{ user.id }}" style="color: #96989a; background-color: #212529;">{{ user.username }}</option>
+                <option value="{{ user.id }}" style="color: #96989a; background-color: #212529;">{{ user.username }}
+                </option>
                 {% endfor %}
             </select>
 
-            <input type="number" name="quantity" min="1" placeholder="Количество" required style="color: #96989a; background-color: #212529;">
+            <input type="number" name="quantity" min="1" placeholder="Количество" required
+                style="color: #96989a; background-color: #212529;">
 
             <button type="submit" style="color: #96989a; background-color: #212529;">Выдать</button>
         </form>
@@ -52,19 +62,23 @@
         <h3 class="mt-4" style="color: #96989a;">Забрать инвентарь у пользователя</h3>
         <form method="POST">
             <input type="hidden" name="action" value="take_back">
-            <select name="user_id" id="userSelect" onchange="showUserInventory(this.value)" required style="color: #96989a; background-color: #212529;">
+            <select name="user_id" id="userSelect" onchange="showUserInventory(this.value)" required
+                style="color: #96989a; background-color: #212529;">
                 {% for user in users %}
-                <option value="{{ user.id }}" style="color: #96989a; background-color: #212529;">{{ user.username }}</option>
+                <option value="{{ user.id }}" style="color: #96989a; background-color: #212529;">{{ user.username }}
+                </option>
                 {% endfor %}
             </select>
 
             <select name="equipment_id" required style="color: #96989a; background-color: #212529;">
                 {% for item in items %}
-                <option value="{{ item.id }}" style="color: #96989a; background-color: #212529;">{{ item.name }}</option>
+                <option value="{{ item.id }}" style="color: #96989a; background-color: #212529;">{{ item.name }}
+                </option>
                 {% endfor %}
             </select>
 
-            <input type="number" name="quantity" min="1" placeholder="Количество" required style="color: #96989a; background-color: #212529;">
+            <input type="number" name="quantity" min="1" placeholder="Количество" required
+                style="color: #96989a; background-color: #212529;">
 
             <button type="submit" style="color: #96989a; background-color: #212529;">Забрать</button>
         </form>
@@ -93,19 +107,18 @@
                     <td>{{ item.count }}</td>
                     <td>
                         {% if item.status == 'ремонт' %}
-                            <span class="badge bg-warning">На ремонте</span>
+                        <span class="badge bg-warning">На ремонте</span>
                         {% elif item.status == 'сломано' %}
-                            <span class="badge bg-danger">Сломано</span>
+                        <span class="badge bg-danger">Сломано</span>
                         {% else %}
-                            <span class="badge bg-success">Новое</span>
+                        <span class="badge bg-success">Новое</span>
                         {% endif %}
                     </td>
                     {% if current_user.admin %}
                     <td>
                         <div class="btn-group">
-                            <a href="{{ url_for('edit_item', item_id=item.id) }}"
-                               class="btn btn-sm btn-primary">
-                               <i class="fas fa-edit"></i> Редактировать
+                            <a href="{{ url_for('edit_item', item_id=item.id) }}" class="btn btn-sm btn-primary">
+                                <i class="fas fa-edit"></i> Редактировать
                             </a>
                             <button class="btn btn-sm btn-danger" onclick="deleteItem('{{ item.id }}')">
                                 <i class="fas fa-trash"></i> Удалить
@@ -121,7 +134,8 @@
 
     {% if current_user.admin %}
     <div class="mt-3">
-        <a href="{{ url_for('add_item') }}" class="btn btn-success" style="background-color: #e3a071; color: #854213; border-color: #96989a;">Добавить новый предмет</a>
+        <a href="{{ url_for('add_item') }}" class="btn btn-success"
+            style="background-color: #e3a071; color: #854213; border-color: #96989a;">Добавить новый предмет</a>
     </div>
     {% endif %}
 </div>
