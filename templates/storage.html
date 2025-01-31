@@ -163,23 +163,21 @@
             .then(response => response.json())
             .then(data => {
                 const userInventoryDiv = document.getElementById('userInventory');
-                userInventoryDiv.innerHTML = ''; // Очистить предыдущий инвентарь
+                userInventoryDiv.innerHTML = '';
 
                 if (data.equipment.length > 0) {
                     const table = document.createElement('table');
                     table.className = 'table table-striped';
                     const header = table.createTHead();
                     const headerRow = header.insertRow(0);
-                    headerRow.insertCell(0).innerText = 'ID предмета';
-                    headerRow.insertCell(1).innerText = 'Наименование';
-                    headerRow.insertCell(2).innerText = 'Количество';
+                    headerRow.insertCell(0).innerText = 'Наименование';
+                    headerRow.insertCell(1).innerText = 'Количество';
 
                     const body = table.createTBody();
                     data.equipment.forEach(item => {
                         const row = body.insertRow();
-                        row.insertCell(0).innerText = item.equipment_id;
-                        row.insertCell(1).innerText = item.storage.name;
-                        row.insertCell(2).innerText = item.count;
+                        row.insertCell(0).innerText = item.storage.name;
+                        row.insertCell(1).innerText = item.count;
                     });
 
                     userInventoryDiv.appendChild(table);
@@ -187,6 +185,26 @@
                     userInventoryDiv.innerText = 'У пользователя нет инвентаря.';
                 }
             });
+    }
+
+    function deleteItem(itemId) {
+        if (confirm('Вы уверены, что хотите удалить этот предмет?')) {
+            fetch(`/storage/delete/${itemId}`, {
+                method: 'DELETE'
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        alert(data.error);
+                    } else {
+                        window.location.reload(); // Перезагружаем страницу после успешного удаления
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Произошла ошибка при удалении предмета');
+                });
+        }
     }
 </script>
 {% endif %}
