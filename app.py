@@ -501,7 +501,7 @@ def process_request(request_id, action):
                 if not storage_item:
                     flash('Ошибка: предмет не найден на складе', 'danger')
                     return redirect(url_for('requests'))
-
+                    
                 if request.request_type == 'ремонт':
                     # Находим оборудование пользователя
                     user_equipment = Equipment.query.filter_by(
@@ -653,6 +653,7 @@ def create_custom_request():
     equipment_name = request.form.get('equipment_name')
     custom_description = request.form.get('custom_description')
     request_type = request.form.get('request_type')
+    count = int(request.form.get('count', 1))
 
     # Поиск оборудования по названию
     equipment = Storage.query.filter(Storage.name == equipment_name).first()
@@ -662,7 +663,8 @@ def create_custom_request():
         user_id=current_user.id,
         storage_id=equipment.id if equipment else None,
         request_type=request_type,
-        custom_description=custom_description
+        custom_description=custom_description,
+        count=count
     )
 
     db.session.add(new_request)

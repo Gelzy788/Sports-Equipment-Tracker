@@ -1,9 +1,11 @@
 click==8.1.2
 colorama==0.4.6
 flask==2.0.3
+openpyxl==3.1.2
 flask-Login==0.6.2
 flask-SQLAlchemy==2.5.1
 gevent==24.11.1
+flask_migrate==4.0.4
 greenlet==3.1.1
 h11==0.14.0
 itsdangerous==2.2.0

@@ -29,8 +29,8 @@
                 <small>{{ notification.created_at.strftime('%d.%m.%Y %H:%M') }}</small>
             </div>
             
-            {% if notification.equipment_id %}
-            <p class="mb-1" style="color: #96989a;">Оборудование: {{ notification.storage.name }}</p>
+            {% if notification.equipment_name or notification.equipment_id %}
+            <p class="mb-1" style="color: #96989a;">Оборудование: {{ notification.equipment_name or notification.equipment_id.name }}</p>
             <p class="mb-1" style="color: #96989a;">Количество: {{ notification.count }}</p>
             {% endif %}
             

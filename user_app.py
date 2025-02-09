@@ -270,6 +270,7 @@ def create_custom_request():
     equipment_name = request.form.get('equipment_name')
     custom_description = request.form.get('custom_description')
     request_type = request.form.get('request_type')
+    count = request.form.get('count')
     
     if not equipment_name or not custom_description:
         flash('Пожалуйста, заполните все поля', 'error')
@@ -279,9 +280,11 @@ def create_custom_request():
         # Создаем новую заявку
         new_request = Requests(
             user_id=current_user.id,
-            equipment_name=equipment_name,  
+            equipment_name=equipment_name,
+            count=count,
             custom_description=custom_description,
             request_type=request_type,
+            request_tip="кастомная",
             status=None,
             created_at=datetime.utcnow()
         )
