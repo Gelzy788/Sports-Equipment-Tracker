@@ -1,24 +1,5 @@
 ### README
 
-**Установка**
-
-1. **Скачайте архив** по этой сслыке <https://github.com/Gelzy788/Sports-Equipment-Tracker/archive/refs/heads/main.zip>.
-
-2. **Установите зависимости**:
-      * Откройте командную строку
-      * Выбирете папку репозитория ```cd C:\путь_до_папки\Sports-Equipment-Tracker-main```          
-      * Установите зависимости из файла requirements.txt:  ```pip install -r requirements.txt```
-
-4. **Запустите** сервер:
-
-   Запустите локальный сервер разработки
-    ```python app.py # windows```
-   ```python3 app.py # linux```
-
-6. **Перейдите** на <http://localhost:5000> для работы с приложением.
-
-
-Для остановки работы сайта нажмите с консоли сочетание клавиш ctr+c или просто закройте окно cmd
 
 # Система управления спортивным инвентарем
 
@@ -183,21 +164,18 @@
 - Pip (менеджер пакетов Python)
 - Свободное место на диске: от 100 МБ
 
-###Установка
+### Установка
 
 1. **Скачайте архив** по этой сслыке <https://github.com/Gelzy788/Sports-Equipment-Tracker/archive/refs/heads/main.zip>.
-
 2. **Установите зависимости**:
-      * Откройте командную строку
-      * Выбирете папку репозитория ```cd C:\путь_до_папки\Sports-Equipment-Tracker-main```          
-      * Установите зависимости из файла requirements.txt:  ```pip install -r requirements.txt```
-
+      - Откройте командную строку
+      - Выбирете папку репозитория ```cd C:\путь_до_папки\Sports-Equipment-Tracker-main```          
+      - Установите зависимости из файла requirements.txt:  ```pip install -r requirements.txt```
 4. **Запустите** сервер:
 
    Запустите локальный сервер разработки
-    ```python app.py # windows```
+   ```python app.py # windows```
    ```python3 app.py # linux```
-
 6. **Перейдите** на <http://localhost:5000> для работы с приложением.
 
 
